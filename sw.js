@@ -6,7 +6,7 @@
   sobre la fuente y el modo avión.
 */
 
-const CACHE_NAME = "ecoswitch-cache-v2";
+const CACHE_NAME = "ecoswitch-cache-v3";
 
 const APP_SHELL = [
   "./",
