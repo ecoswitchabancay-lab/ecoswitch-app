@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#16234A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ECOSWITCH">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
+<title>ECOSWITCH</title>
+<style>
+  @font-face{
+    font-family:'DSEG7';
+    src:url('https://cdn.jsdelivr.net/npm/dseg@0.46.0/fonts/DSEG7-Classic/DSEG7Classic-Bold.woff2') format('woff2');
+    font-weight:bold; font-style:normal; font-display:swap;
+  }
+  :root{
+    --navy:#16234A; --navy-dark:#0F1935; --navy-hi:#223868;
+    --brass:#B9852E; --brass-bg:#F3E7CE;
+    --ok:#1F6E4A; --danger:#A33B2E;
+    --backdrop:#0B1220;
+  }
+  [data-theme="light"]{
+    --paper:#F7F8FA; --ink:#12203D; --ink-soft:#54607A; --ink-faint:#98A1B8;
+    --field-bg:#EDF0F6; --line:#DFE3EC;
+    --disp1:#DCE2EE; --disp2:#EAEEF6; --disp-border:#B9C2D6;
+    --seg-on:#1B2A52; --seg-off:rgba(27,42,82,0.14);
+    --seg-glow-a:rgba(27,42,82,0); --seg-glow-b:rgba(27,42,82,0);
+  }
+  [data-theme="dark"]{
+    --paper:#0D1424; --ink:#E7ECF7; --ink-soft:#9FAAC4; --ink-faint:#6B7592;
+    --field-bg:#182036; --line:#243154;
+    --disp1:#05070D; --disp2:#0E1526; --disp-border:#060911;
+    --seg-on:#FFB144; --seg-off:rgba(255,177,68,0.08);
+    --seg-glow-a:rgba(255,177,68,.65); --seg-glow-b:rgba(255,177,68,.28);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{ margin:0; padding:0; height:100%; width:100%; overflow:hidden; background:var(--backdrop); }
+  body{ display:flex; align-items:center; justify-content:center; font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
+
+  .device{ position:relative; width:390px; height:844px; max-width:100vw; max-height:100vh;
+    background:var(--paper); border-radius:38px; overflow:hidden; display:flex; flex-direction:column; }
+
+  .statusbar{ flex:0 0 auto; height:30px; background:var(--navy-dark); color:#EAF0FA;
+    display:flex; align-items:center; justify-content:space-between; padding:0 20px; font-size:12.5px; font-weight:600; font-variant-numeric:tabular-nums; }
+  .statusbar .icons{ display:flex; align-items:center; gap:6px; }
+
+  .view{ flex:1 1 auto; display:none; flex-direction:column; min-height:0; }
+  .view.active{ display:flex; }
+
+  /* ===== DISPLAY DIGITAL (fuente DSEG7, con Courier New como respaldo) ===== */
+  .digital{
+    font-family:'DSEG7','Courier New',monospace;
+    color:var(--seg-on);
+    text-shadow:0 0 0.05em var(--seg-glow-a), 0 0 0.13em var(--seg-glow-b);
+    letter-spacing:0.04em;
+  }
+
+  /* ---------- login ---------- */
+  #viewLogin{ justify-content:center; padding:0 32px; background:var(--paper); }
+  .login-brand{ text-align:center; margin-bottom:40px; }
+  .login-brand .mark{ font-family:Georgia,"Times New Roman",serif; font-size:28px; color:var(--navy); }
+  .login-brand .org{ font-size:11px; color:var(--ink-faint); margin-top:6px; line-height:1.4; }
+  .login-field{ background:var(--field-bg); border:1.5px solid transparent; border-radius:12px; padding:15px 16px;
+    font-size:16px; color:var(--ink); margin-bottom:14px; width:100%; font-family:inherit; }
+  .login-field:focus{ outline:none; border-color:var(--navy); }
+  .login-field::placeholder{ color:var(--ink-faint); }
+  .login-btn{ width:100%; background:linear-gradient(180deg,var(--navy-hi),var(--navy)); color:#fff; border:none; border-radius:12px;
+    padding:16px 0; font-size:16px; font-weight:600; margin-top:8px; cursor:pointer; font-family:inherit;
+    box-shadow:0 4px 10px rgba(15,25,53,.3), inset 0 1px 0 rgba(255,255,255,.1); }
+  .login-btn:active{ background:var(--navy-dark); }
+
+  /* ---------- shell ---------- */
+  #viewShell{ background:var(--paper); }
+  .appbar{ flex:0 0 auto; height:54px; background:linear-gradient(180deg,var(--navy-hi),var(--navy)); color:#fff;
+    display:flex; align-items:center; justify-content:space-between; padding:0 8px 0 6px; box-shadow:0 2px 6px rgba(11,18,32,.25); }
+  .icon-btn{ width:40px; height:40px; border:none; background:transparent; color:#fff; display:flex; align-items:center;
+    justify-content:center; cursor:pointer; border-radius:50%; }
+  .icon-btn:active{ background:rgba(255,255,255,.14); }
+  .appbar .mark{ font-family:Georgia,"Times New Roman",serif; font-size:18px; }
+  .led{ width:10px; height:10px; border-radius:50%; background:var(--ok); margin-right:8px; flex:0 0 auto; box-shadow:0 0 6px rgba(31,110,74,.8); }
+  .led.pending{ background:var(--brass); box-shadow:0 0 6px rgba(185,133,46,.85); }
+
+  .tabcontent{ flex:1 1 auto; min-height:0; display:none; flex-direction:column; }
+  .tabcontent.active{ display:flex; }
+
+  #tabRegistrar{ padding:14px 22px 0; }
+  .row-compact{ flex:0 0 auto; display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+  .row-compact select{ flex:1 1 auto; font-family:inherit; font-size:14.5px; color:var(--ink); background:var(--field-bg);
+    border:none; border-radius:10px; padding:0 12px; height:44px; }
+  .muestra-badge{ flex:0 0 auto; height:44px; padding:0 12px; border-radius:10px; background:linear-gradient(180deg,var(--disp2),var(--disp1));
+    border:1.5px solid var(--disp-border); display:flex; align-items:center; gap:6px; font-size:11px; color:var(--ink-faint); font-weight:600; white-space:nowrap; }
+  .muestra-badge .digital{ font-size:17px; }
+
+  .metrics{ flex:1 1 auto; display:flex; flex-direction:column; justify-content:center; gap:12px; min-height:0; }
+  .metric-row{ display:flex; align-items:center; gap:12px; }
+  .metric-label{ flex:0 0 50px; font-size:13.5px; color:var(--ink-soft); font-weight:600; }
+  .metric-cell{ position:relative; flex:1 1 auto; height:60px; }
+  .metric-real{
+    width:100%; height:100%; border:2.5px solid var(--disp-border); border-radius:14px; margin:0;
+    padding:0 16px; font-size:32px; text-align:right; background:linear-gradient(180deg,var(--disp2),var(--disp1));
+    box-shadow:inset 0 3px 8px rgba(0,0,0,.25);
+  }
+  .metric-real:focus{ outline:none; border-color:var(--brass); }
+  .metric-real.bad{ border-color:var(--danger); }
+  .metric-real.warn{ border-color:var(--brass); }
+  .metric-unit{ flex:0 0 32px; font-size:13px; color:var(--ink-faint); font-weight:600; }
+
+  .gps-row{ flex:0 0 auto; display:flex; align-items:center; gap:12px; margin:2px 0 10px; }
+  .gps-label{ flex:0 0 50px; font-size:11px; color:var(--ink-soft); font-weight:600; }
+  .gps-display{ flex:1 1 auto; background:linear-gradient(180deg,var(--disp2),var(--disp1)); border:1.5px solid var(--disp-border);
+    border-radius:10px; padding:9px 12px; box-shadow:inset 0 2px 6px rgba(0,0,0,.2); overflow:hidden; }
+  .gps-display .digital{ font-size:14px; letter-spacing:0.02em; }
+
+  .cta-wrap{ flex:0 0 auto; padding:10px 0 16px; }
+  .cta{ position:relative; width:100%; height:56px; background:linear-gradient(180deg,var(--navy-hi),var(--navy)); color:#fff; border:none;
+    border-radius:16px; font-family:inherit; font-size:16px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center;
+    box-shadow:0 5px 12px rgba(15,25,53,.3), inset 0 1px 0 rgba(255,255,255,.1); }
+  .cta:active{ background:var(--navy-dark); }
+  .cta .cta-spinner,.cta .cta-check{ display:none; }
+  .cta .cta-spinner{ width:20px; height:20px; border-radius:50%; border:3px solid rgba(255,255,255,.35); border-top-color:#fff; animation:spin .7s linear infinite; }
+  .cta.sending .cta-label{ display:none; } .cta.sending .cta-spinner{ display:block; }
+  .cta.done{ background:var(--ok); } .cta.done .cta-label{ display:none; } .cta.done .cta-check{ display:block; font-size:22px; }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  #tabGraficos{ padding:18px 20px 10px; align-items:stretch; justify-content:flex-start; }
+  .graf-title{ font-size:13px; font-weight:700; color:var(--ink-soft); margin-bottom:10px; }
+  .graf-card{ flex:1 1 auto; background:linear-gradient(180deg,var(--disp2),var(--disp1)); border:1.5px solid var(--disp-border);
+    border-radius:16px; padding:14px 10px 6px; display:flex; flex-direction:column; min-height:0; }
+  .graf-legend{ display:flex; gap:14px; justify-content:center; margin-top:8px; }
+  .graf-legend span{ font-size:11px; color:var(--ink-soft); display:flex; align-items:center; gap:5px; }
+  .dot{ width:8px; height:8px; border-radius:50%; }
+
+  .bottomnav{ flex:0 0 auto; height:60px; display:flex; border-top:1px solid var(--line); background:var(--paper); }
+  .bottomnav button{ flex:1; border:none; background:transparent; display:flex; flex-direction:column; align-items:center;
+    justify-content:center; gap:3px; color:var(--ink-faint); font-family:inherit; font-size:10.5px; font-weight:600; cursor:pointer; }
+  .bottomnav button.active{ color:var(--navy); }
+  .bottomnav svg{ width:20px; height:20px; }
+
+  .homebar{ position:absolute; bottom:8px; left:50%; transform:translateX(-50%); width:120px; height:4px; border-radius:3px; background:var(--ink); opacity:.28; }
+
+  /* ---------- modal de confirmacion (valor fuera de rango esperado) ---------- */
+  .modal-overlay{ position:absolute; inset:0; background:rgba(8,12,22,.6); display:none; align-items:center; justify-content:center; z-index:50; padding:0 30px; }
+  .modal-overlay.show{ display:flex; }
+  .modal-card{ background:var(--paper); border-radius:18px; padding:22px 20px 18px; width:100%; max-width:320px; box-shadow:0 20px 50px rgba(0,0,0,.45); }
+  .modal-icon{ width:40px; height:40px; margin:0 auto 8px; display:flex; align-items:center; justify-content:center; }
+  .modal-title{ font-size:16px; font-weight:700; color:var(--ink); text-align:center; margin-bottom:10px; }
+  .modal-msg{ font-size:14px; color:var(--ink-soft); line-height:1.6; text-align:center; margin-bottom:18px; }
+  .modal-msg b{ color:var(--ink); font-family:ui-monospace,Consolas,monospace; }
+  .modal-actions{ display:flex; gap:10px; }
+  .modal-btn{ flex:1; border:none; border-radius:12px; padding:12px 0; font-size:14.5px; font-weight:700; cursor:pointer; font-family:inherit; }
+  .modal-no{ background:var(--field-bg); color:var(--ink); }
+  .modal-yes{ background:var(--brass); color:#fff; }
+
+  .subview{ background:var(--paper); }
+  .subbar{ flex:0 0 auto; height:54px; background:linear-gradient(180deg,var(--navy-hi),var(--navy)); color:#fff; display:flex; align-items:center; gap:4px; padding:0 6px; }
+  .subbar .title{ font-size:16px; font-weight:600; }
+  .subbody{ flex:1 1 auto; min-height:0; padding:16px 22px; display:flex; flex-direction:column; overflow-y:auto; }
+
+  .menu-item{ display:flex; align-items:center; gap:14px; padding:16px 4px; border-bottom:1px solid var(--line);
+    font-size:15px; color:var(--ink); cursor:pointer; background:none; border-left:none; border-right:none; border-top:none;
+    width:100%; text-align:left; font-family:inherit; }
+  .menu-item.danger{ color:var(--danger); }
+
+  .cfg-section{ margin-bottom:18px; }
+  .cfg-label{ font-size:11.5px; font-weight:700; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.4px; margin-bottom:8px; }
+  .cfg-field{ background:var(--field-bg); border:1.5px solid transparent; border-radius:10px; padding:11px 13px;
+    font-size:14px; color:var(--ink); width:100%; font-family:ui-monospace,Consolas,monospace; margin-bottom:8px; }
+  .cfg-field:focus{ outline:none; border-color:var(--navy); }
+  .cfg-range-row{ display:flex; gap:8px; align-items:center; margin-bottom:6px; }
+  .cfg-range-row .p{ flex:0 0 46px; font-size:13px; color:var(--ink-soft); font-weight:600; }
+  .cfg-range-row input{ flex:1; background:var(--field-bg); border:1.5px solid transparent; border-radius:8px; padding:8px 10px;
+    font-size:13px; font-family:ui-monospace,Consolas,monospace; color:var(--ink); }
+  .cfg-range-row input:focus{ outline:none; border-color:var(--navy); }
+  .cfg-hard{ font-size:11px; color:var(--ink-faint); margin:2px 0 10px; }
+
+  .theme-toggle{ display:flex; background:var(--field-bg); border-radius:10px; overflow:hidden; }
+  .theme-toggle button{ flex:1; border:none; background:transparent; color:var(--ink-soft); font-family:inherit; font-size:13.5px;
+    font-weight:600; padding:10px 0; cursor:pointer; }
+  .theme-toggle button.active{ background:var(--navy); color:#fff; }
+
+  .punto-row{ display:flex; align-items:center; gap:8px; padding:9px 0; border-bottom:1px solid var(--line); }
+  .punto-tag{ flex:0 0 auto; font-family:ui-monospace,Consolas,monospace; font-size:12px; font-weight:700; color:#fff; background:var(--navy); border-radius:6px; padding:3px 7px; }
+  .punto-nombre{ flex:1 1 auto; font-size:14px; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .punto-nombre-edit{ flex:1 1 auto; font-size:14px; color:var(--ink); font-family:inherit; border:1.5px solid var(--navy); border-radius:8px; padding:5px 8px; background:var(--paper); }
+  .punto-btn{ flex:0 0 auto; width:28px; height:28px; border:none; background:transparent; cursor:pointer; color:var(--ink-soft); display:flex; align-items:center; justify-content:center; }
+  .punto-btn.del{ color:var(--danger); }
+  .punto-add-row{ display:flex; gap:8px; margin-top:10px; }
+  .punto-add-row input{ flex:1; background:var(--field-bg); border:1.5px solid transparent; border-radius:8px; padding:9px 11px; font-size:13.5px; color:var(--ink); font-family:inherit; }
+  .punto-add-row input:focus{ outline:none; border-color:var(--navy); }
+  .punto-add-row button{ flex:0 0 auto; width:38px; border:none; border-radius:8px; background:var(--navy); color:#fff; font-size:19px; font-weight:700; cursor:pointer; }
+
+  .instr p{ font-size:13.5px; line-height:1.6; color:var(--ink); margin:0 0 12px; }
+  .instr h3{ font-size:12px; text-transform:uppercase; letter-spacing:.3px; color:var(--ink-faint); margin:16px 0 6px; }
+
+  @media (prefers-reduced-motion: reduce){ .cta .cta-spinner{ animation:none; } }
+</style>
+</head>
+<body>
+
+<div class="device">
+  <div class="statusbar">
+    <span id="clock">9:41</span>
+    <span class="icons">
+      <svg width="16" height="11" viewBox="0 0 16 11"><rect x="0" y="7" width="3" height="4" rx="0.5" fill="#EAF0FA"/><rect x="4.5" y="5" width="3" height="6" rx="0.5" fill="#EAF0FA"/><rect x="9" y="3" width="3" height="8" rx="0.5" fill="#EAF0FA"/><rect x="13" y="0" width="3" height="11" rx="0.5" fill="#EAF0FA"/></svg>
+      <svg width="15" height="11" viewBox="0 0 15 11"><path d="M7.5 9.5C8.05 9.5 8.5 9.05 8.5 8.5C8.5 7.95 8.05 7.5 7.5 7.5C6.95 7.5 6.5 7.95 6.5 8.5C6.5 9.05 6.95 9.5 7.5 9.5Z" fill="#EAF0FA"/><path d="M4.8 6.3C5.5 5.6 6.45 5.2 7.5 5.2C8.55 5.2 9.5 5.6 10.2 6.3" stroke="#EAF0FA" stroke-width="1.3" stroke-linecap="round"/><path d="M2.3 3.9C3.7 2.5 5.5 1.7 7.5 1.7C9.5 1.7 11.3 2.5 12.7 3.9" stroke="#EAF0FA" stroke-width="1.3" stroke-linecap="round"/></svg>
+      <svg width="24" height="12" viewBox="0 0 24 12"><rect x="0.75" y="0.75" width="20.5" height="10.5" rx="2.5" stroke="#EAF0FA" stroke-width="1.2"/><rect x="2.5" y="2.5" width="15" height="7" rx="1" fill="#EAF0FA"/><rect x="22" y="4" width="1.6" height="4" rx="0.8" fill="#EAF0FA"/></svg>
+    </span>
+  </div>
+
+  <!-- LOGIN -->
+  <div class="view active" id="viewLogin">
+    <div class="login-brand">
+      <svg width="34" height="26" viewBox="0 0 34 26" fill="none" style="margin-bottom:8px;">
+        <path d="M3 22 L3 11 L9 16 L17 6 L25 16 L31 11 L31 22 Z" fill="#B9852E"/>
+        <rect x="2" y="21" width="30" height="4" rx="1.5" fill="#B9852E"/>
+        <circle cx="3" cy="9" r="2" fill="#B9852E"/><circle cx="17" cy="4" r="2.2" fill="#B9852E"/><circle cx="31" cy="9" r="2" fill="#B9852E"/>
+      </svg>
+      <div class="mark">ECOSWITCH</div>
+      <div class="org">I.E.S. Nuestra Señora de las Mercedes · Abancay</div>
+    </div>
+    <input class="login-field" id="loginUser" type="text" placeholder="Usuario" autocomplete="off">
+    <input class="login-field" id="loginPass" type="password" placeholder="Contraseña" autocomplete="off">
+    <button class="login-btn" id="loginBtn">Ingresar</button>
+  </div>
+
+  <!-- SHELL -->
+  <div class="view" id="viewShell">
+    <div class="appbar">
+      <button class="icon-btn" id="btnMenu" aria-label="Menú">
+        <svg width="22" height="22" viewBox="0 0 22 22"><rect y="4" width="22" height="2.2" rx="1.1" fill="#fff"/><rect y="10" width="22" height="2.2" rx="1.1" fill="#fff"/><rect y="16" width="22" height="2.2" rx="1.1" fill="#fff"/></svg>
+      </button>
+      <span class="mark">ECOSWITCH</span>
+      <span class="led" id="led"></span>
+    </div>
+
+    <div class="tabcontent active" id="tabRegistrar">
+      <div class="row-compact">
+        <select id="punto"></select>
+        <div class="muestra-badge">Muestra&nbsp;<span id="muestraNum" class="digital">1</span></div>
+      </div>
+      <div class="metrics">
+        <div class="metric-row">
+          <div class="metric-label">pH</div>
+          <div class="metric-cell"><input class="metric-real digital" id="ph" type="text" inputmode="decimal" autocomplete="off"></div>
+          <div class="metric-unit"></div>
+        </div>
+        <div class="metric-row">
+          <div class="metric-label">TDS</div>
+          <div class="metric-cell"><input class="metric-real digital" id="tds" type="text" inputmode="numeric" autocomplete="off"></div>
+          <div class="metric-unit">ppm</div>
+        </div>
+        <div class="metric-row">
+          <div class="metric-label">Temp.</div>
+          <div class="metric-cell"><input class="metric-real digital" id="temp" type="text" inputmode="decimal" autocomplete="off"></div>
+          <div class="metric-unit">°C</div>
+        </div>
+      </div>
+      <div class="gps-row">
+        <div class="gps-label">GPS</div>
+        <div class="gps-display"><span id="gpsDisplay" class="digital">— · —</span></div>
+      </div>
+      <div class="cta-wrap">
+        <button class="cta" id="registrarBtn">
+          <span class="cta-label">Registrar</span><span class="cta-spinner"></span><span class="cta-check">&#10003;</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="tabcontent" id="tabGraficos">
+      <div class="graf-title">pH · TDS · Temperatura — últimas muestras</div>
+      <div class="graf-card">
+        <svg viewBox="0 0 300 170" width="100%" height="100%" preserveAspectRatio="none" id="chartSvg"></svg>
+        <div class="graf-legend">
+          <span><span class="dot" style="background:#FFB144"></span>pH</span>
+          <span><span class="dot" style="background:#B9852E"></span>TDS</span>
+          <span><span class="dot" style="background:#3FA06B"></span>Temp.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="bottomnav">
+      <button class="tab-btn active" data-tab="tabRegistrar">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M4 20h16M6 16.5V20h3.5L19 10.5l-3.5-3.5L6 16.5z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>Registrar
+      </button>
+      <button class="tab-btn" data-tab="tabGraficos">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M4 20V10M11 20V4M18 20v-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>Gráficos
+      </button>
+    </div>
+  </div>
+
+  <!-- MENU -->
+  <div class="view subview" id="viewMenu">
+    <div class="subbar"><button class="icon-btn" id="menuBack"><svg width="20" height="20" viewBox="0 0 20 20"><path d="M12.5 4l-6 6 6 6" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button><span class="title">Menú</span></div>
+    <div class="subbody" style="padding-top:6px;">
+      <button class="menu-item" id="goConfig">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="2.6" stroke="currentColor" stroke-width="1.5"/><path d="M10 2.5v2M10 15.5v2M17.5 10h-2M4.5 10h-2M15.4 4.6l-1.4 1.4M6 12.6l-1.4 1.4M15.4 15.4l-1.4-1.4M6 7.4L4.6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        Configuración
+      </button>
+      <button class="menu-item" id="goInstr">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7.5" stroke="currentColor" stroke-width="1.5"/><path d="M10 9v5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="10" cy="6.3" r="1" fill="currentColor"/></svg>
+        Instrucciones
+      </button>
+      <button class="menu-item danger" id="doLogout">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M8 17H4.5a1 1 0 01-1-1V4a1 1 0 011-1H8M13 14l4-4-4-4M17 10H7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Cerrar sesión
+      </button>
+    </div>
+  </div>
+
+  <!-- CONFIGURACION -->
+  <div class="view subview" id="viewConfig">
+    <div class="subbar"><button class="icon-btn" id="configBack"><svg width="20" height="20" viewBox="0 0 20 20"><path d="M12.5 4l-6 6 6 6" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button><span class="title">Configuración</span></div>
+    <div class="subbody">
+      <div class="cfg-section">
+        <div class="cfg-label">Apariencia</div>
+        <div class="theme-toggle">
+          <button data-theme-choice="light" class="active">Claro</button>
+          <button data-theme-choice="dark">Oscuro</button>
+        </div>
+      </div>
+      <div class="cfg-section">
+        <div class="cfg-label">Puntos de muestreo</div>
+        <div id="puntosList"></div>
+        <div class="punto-add-row"><input id="nuevoPuntoNombre" placeholder="Nombre del nuevo punto" maxlength="40"><button id="addPuntoBtn">+</button></div>
+      </div>
+      <div class="cfg-section">
+        <div class="cfg-label">URL del backend (Apps Script)</div>
+        <input class="cfg-field" id="cfgUrl" value="https://script.google.com/macros/s/EJEMPLO/exec">
+      </div>
+      <div class="cfg-section">
+        <div class="cfg-label">Rango esperado — pH</div>
+        <div class="cfg-hard">Límite del instrumento: 0.00 – 16.00 (fijo)</div>
+        <div class="cfg-range-row"><span class="p">Mín.</span><input id="cfgPhMin" value="6.0"><span class="p">Máx.</span><input id="cfgPhMax" value="9.0"></div>
+      </div>
+      <div class="cfg-section">
+        <div class="cfg-label">Rango esperado — TDS (ppm)</div>
+        <div class="cfg-hard">Límite del instrumento: 0 – 9990 (fijo)</div>
+        <div class="cfg-range-row"><span class="p">Mín.</span><input id="cfgTdsMin" value="0"><span class="p">Máx.</span><input id="cfgTdsMax" value="600"></div>
+      </div>
+      <div class="cfg-section">
+        <div class="cfg-label">Rango esperado — Temperatura (°C)</div>
+        <div class="cfg-hard">Límite del instrumento: -50 – 300 (fijo)</div>
+        <div class="cfg-range-row"><span class="p">Mín.</span><input id="cfgTempMin" value="5"><span class="p">Máx.</span><input id="cfgTempMax" value="25"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- INSTRUCCIONES -->
+  <div class="view subview" id="viewInstr">
+    <div class="subbar"><button class="icon-btn" id="instrBack"><svg width="20" height="20" viewBox="0 0 20 20"><path d="M12.5 4l-6 6 6 6" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button><span class="title">Instrucciones</span></div>
+    <div class="subbody instr">
+      <h3>Qué hace</h3><p>Registra en el celular cada lectura de pH, TDS y temperatura tomada con los medidores del equipo, junto con la ubicación y la hora, aunque no haya señal en el momento.</p>
+      <h3>Puntos de muestreo</h3><p>Se configuran en el menú → Configuración: cada uno tiene un nombre propio y un número que la app asigna solo.</p>
+      <h3>Apariencia</h3><p>En Configuración se puede cambiar entre modo claro (mejor para pantalla/proyector) y oscuro (mejor bajo sol directo en el campo).</p>
+      <h3>El punto de color</h3><p>Naranja: hay al menos una medición esperando enviarse. Verde: todo lo registrado ya se sincronizó.</p>
+    </div>
+  </div>
+
+  <div class="homebar"></div>
+
+  <div class="modal-overlay" id="warnModal">
+    <div class="modal-card">
+      <div class="modal-icon">
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="none"><path d="M12 3l10 18H2L12 3z" stroke="#B9852E" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 10v4" stroke="#B9852E" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="17.3" r="1" fill="#B9852E"/></svg>
+      </div>
+      <div class="modal-title">Valor fuera de lo esperado</div>
+      <div class="modal-msg" id="warnMsg"></div>
+      <div class="modal-actions">
+        <button class="modal-btn modal-no" id="warnNo">No</button>
+        <button class="modal-btn modal-yes" id="warnYes">Sí, registrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var $ = function(sel){ return document.querySelector(sel); };
+  var views = ["viewLogin","viewShell","viewMenu","viewConfig","viewInstr"];
+  function showView(id){ views.forEach(function(v){ $("#"+v).classList.toggle("active", v===id); }); }
+
+  /* ================= registro del service worker ================= */
+  if("serviceWorker" in navigator){
+    window.addEventListener("load", function(){
+      navigator.serviceWorker.register("sw.js").catch(function(){ /* si falla, la app sigue funcionando igual, solo sin cache offline */ });
+    });
+  }
+
+  /* ================= persistencia local (localStorage) ================= */
+  var LS = {
+    puntos:"eco_puntos", puntoCounter:"eco_puntoCounter", muestraPorPunto:"eco_muestraPorPunto",
+    config:"eco_config", theme:"eco_theme", lastUser:"eco_lastUser", registros:"eco_registros"
+  };
+  function cargar(key, porDefecto){
+    try{ var v=localStorage.getItem(key); return v!=null ? JSON.parse(v) : porDefecto; }
+    catch(e){ return porDefecto; }
+  }
+  function guardar(key, valor){ try{ localStorage.setItem(key, JSON.stringify(valor)); }catch(e){} }
+
+  var DEFAULT_CONFIG = {
+    backendUrl:"https://script.google.com/macros/s/EJEMPLO/exec",
+    ph:[6.0,9.0], tds:[0,600], temp:[5,25]
+  };
+
+  var puntos = cargar(LS.puntos, [{num:1,nombre:"Inicio del río"},{num:2,nombre:"Punto medio"},{num:3,nombre:"Desembocadura"}]);
+  var puntoCounter = cargar(LS.puntoCounter, 3);
+  var muestraPorPunto = cargar(LS.muestraPorPunto, {});
+  var config = cargar(LS.config, DEFAULT_CONFIG);
+  var registros = cargar(LS.registros, []);
+
+  var loginUser=$("#loginUser"), loginPass=$("#loginPass"), loginBtn=$("#loginBtn");
+  var clock=$("#clock");
+  var puntoSel=$("#punto"), muestraNum=$("#muestraNum");
+  var phEl=$("#ph"), tdsEl=$("#tds"), tempEl=$("#temp"), gpsDisplay=$("#gpsDisplay");
+  var registrarBtn=$("#registrarBtn"), led=$("#led");
+  var btnMenu=$("#btnMenu"), menuBack=$("#menuBack"), goConfig=$("#goConfig"), goInstr=$("#goInstr"), doLogout=$("#doLogout");
+  var configBack=$("#configBack"), instrBack=$("#instrBack");
+  var puntosList=$("#puntosList"), nuevoPuntoNombre=$("#nuevoPuntoNombre"), addPuntoBtn=$("#addPuntoBtn");
+  var warnModal=$("#warnModal"), warnMsg=$("#warnMsg"), warnNo=$("#warnNo"), warnYes=$("#warnYes");
+  var cfgUrl=$("#cfgUrl"), cfgPhMin=$("#cfgPhMin"), cfgPhMax=$("#cfgPhMax"), cfgTdsMin=$("#cfgTdsMin"),
+      cfgTdsMax=$("#cfgTdsMax"), cfgTempMin=$("#cfgTempMin"), cfgTempMax=$("#cfgTempMax");
+
+  var isDemo=false, currentUser="";
+  var pendingConfirm=null;
+  var HARD={ph:[0,16], tds:[0,9990], temp:[-50,300]};
+
+  function pad(n){ return String(n).length<2 ? "0"+n : String(n); }
+  (function(){ var d=new Date(); clock.textContent = d.getHours()+":"+pad(d.getMinutes()); })();
+
+  function fechaHoy(){ var d=new Date(); return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()); }
+  function horaAhora(){ var d=new Date(); return pad(d.getHours())+":"+pad(d.getMinutes()); }
+  function nuevoId(){ return "M-"+Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,6); }
+
+  /* ================= configuracion: cargar valores guardados en la UI ================= */
+  cfgUrl.value = config.backendUrl;
+  cfgPhMin.value = config.ph[0]; cfgPhMax.value = config.ph[1];
+  cfgTdsMin.value = config.tds[0]; cfgTdsMax.value = config.tds[1];
+  cfgTempMin.value = config.temp[0]; cfgTempMax.value = config.temp[1];
+  [cfgUrl,cfgPhMin,cfgPhMax,cfgTdsMin,cfgTdsMax,cfgTempMin,cfgTempMax].forEach(function(el){
+    el.addEventListener("change", function(){
+      config = {
+        backendUrl: cfgUrl.value.trim() || DEFAULT_CONFIG.backendUrl,
+        ph:[parseFloat(cfgPhMin.value), parseFloat(cfgPhMax.value)],
+        tds:[parseFloat(cfgTdsMin.value), parseFloat(cfgTdsMax.value)],
+        temp:[parseFloat(cfgTempMin.value), parseFloat(cfgTempMax.value)]
+      };
+      guardar(LS.config, config);
+    });
+  });
+
+  /* ================= tema (persistente) ================= */
+  var temaGuardado = cargar(LS.theme, "light");
+  document.documentElement.setAttribute("data-theme", temaGuardado);
+  Array.prototype.forEach.call(document.querySelectorAll(".theme-toggle button"), function(b){
+    b.classList.toggle("active", b.getAttribute("data-theme-choice")===temaGuardado);
+    b.addEventListener("click", function(){
+      var t = b.getAttribute("data-theme-choice");
+      document.documentElement.setAttribute("data-theme", t);
+      guardar(LS.theme, t);
+      Array.prototype.forEach.call(document.querySelectorAll(".theme-toggle button"), function(x){ x.classList.toggle("active", x===b); });
+    });
+  });
+
+  function randomPlausible(){ return { ph:(7.2+Math.random()*1.0).toFixed(2), tds:Math.round(160+Math.random()*170), temp:(11.5+Math.random()*4.5).toFixed(1) }; }
+  function fillMetrics(v){ phEl.value=v.ph; tdsEl.value=v.tds; tempEl.value=v.temp; }
+  function clearMetrics(){ phEl.value=""; tdsEl.value=""; tempEl.value=""; }
+
+  function sanitize(el, neg, dec){
+    el.addEventListener("input", function(){
+      var v=el.value, allowed="0123456789"+(dec?".":"")+(neg?"-":""), out="";
+      for(var i=0;i<v.length;i++){ var ch=v[i]; if(allowed.indexOf(ch)===-1) continue;
+        if(ch==="." && out.indexOf(".")!==-1) continue; if(ch==="-" && out.length!==0) continue; out+=ch; }
+      el.value=out; el.classList.remove("warn","bad");
+    });
+  }
+  sanitize(phEl,false,true); sanitize(tdsEl,false,false); sanitize(tempEl,true,true);
+
+  /* ================= puntos de muestreo (persistentes) ================= */
+  function puntoActual(){
+    var num = parseInt(puntoSel.value,10);
+    return puntos.filter(function(p){ return p.num===num; })[0] || puntos[0];
+  }
+  function renderPuntoSelect(){
+    var actual = puntoSel.value;
+    puntoSel.innerHTML="";
+    puntos.forEach(function(pt){ var o=document.createElement("option"); o.value=String(pt.num); o.textContent="P"+pt.num+" · "+pt.nombre; puntoSel.appendChild(o); });
+    if(puntos.some(function(pt){ return String(pt.num)===actual; })){ puntoSel.value=actual; }
+    muestraNum.textContent = String((muestraPorPunto[puntoSel.value]||0)+1);
+  }
+  function renderPuntosConfig(){
+    puntosList.innerHTML="";
+    puntos.forEach(function(pt){
+      var row=document.createElement("div"); row.className="punto-row";
+      row.innerHTML =
+        '<span class="punto-tag">P'+pt.num+'</span>' +
+        '<span class="punto-nombre">'+pt.nombre.replace(/</g,"&lt;")+'</span>' +
+        '<button class="punto-btn edit" title="Editar"><svg width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M14 3l3 3-9 9H5v-3z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></button>' +
+        '<button class="punto-btn del" title="Borrar"><svg width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M5 6h10M8 6V4h4v2M6 6l.6 10h6.8L14 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>';
+      row.querySelector(".edit").addEventListener("click", function(){
+        var nombreSpan=row.querySelector(".punto-nombre");
+        var input=document.createElement("input"); input.className="punto-nombre-edit"; input.value=pt.nombre; input.maxLength=40;
+        row.replaceChild(input, nombreSpan); input.focus(); input.select();
+        function guardarNombre(){
+          var v=input.value.trim(); pt.nombre = v || pt.nombre;
+          guardar(LS.puntos, puntos);
+          renderPuntosConfig(); renderPuntoSelect();
+        }
+        input.addEventListener("keydown", function(e){ if(e.key==="Enter") guardarNombre(); });
+        input.addEventListener("blur", guardarNombre);
+      });
+      row.querySelector(".del").addEventListener("click", function(){
+        if(puntos.length<=1) return;
+        puntos = puntos.filter(function(x){ return x.num!==pt.num; });
+        delete muestraPorPunto[pt.num];
+        guardar(LS.puntos, puntos); guardar(LS.muestraPorPunto, muestraPorPunto);
+        renderPuntosConfig(); renderPuntoSelect();
+      });
+      puntosList.appendChild(row);
+    });
+  }
+  addPuntoBtn.addEventListener("click", function(){
+    var nombre=nuevoPuntoNombre.value.trim(); if(!nombre) return;
+    puntoCounter++; puntos.push({num:puntoCounter, nombre:nombre}); nuevoPuntoNombre.value="";
+    guardar(LS.puntos, puntos); guardar(LS.puntoCounter, puntoCounter);
+    renderPuntosConfig(); renderPuntoSelect();
+  });
+  nuevoPuntoNombre.addEventListener("keydown", function(e){ if(e.key==="Enter") addPuntoBtn.click(); });
+  puntoSel.addEventListener("change", function(){ muestraNum.textContent = String((muestraPorPunto[puntoSel.value]||0)+1); });
+
+  /* ================= LED de estado ================= */
+  function hayPendientes(){ return registros.some(function(r){ return r.sync==="pendiente"; }); }
+  function updateLed(){ led.classList.toggle("pending", hayPendientes()); }
+
+  /* ================= grafico local (a partir de mediciones reales de este celular) ================= */
+  function drawChart(){
+    var svg=$("#chartSvg");
+    var reales = registros.filter(function(r){ return r.tipo==="REAL"; }).slice(-8);
+    if(reales.length<2){ svg.innerHTML=""; return; }
+    var W=300,pad=10;
+    var ph=reales.map(function(r){ return parseFloat(r.ph); });
+    var tds=reales.map(function(r){ return parseFloat(r.tds); });
+    var temp=reales.map(function(r){ return parseFloat(r.temp); });
+    function scale(arr,y0,y1){ var mn=Math.min.apply(null,arr), mx=Math.max.apply(null,arr); if(mx===mn){mx=mn+1;}
+      return arr.map(function(v,i){ var x=pad+i*((W-2*pad)/(arr.length-1)); var y=y1-((v-mn)/(mx-mn))*(y1-y0); return [x,y]; }); }
+    function toPath(pts){ return pts.map(function(p,i){ return (i===0?"M":"L")+p[0].toFixed(1)+","+p[1].toFixed(1); }).join(" "); }
+    svg.innerHTML =
+      '<path d="'+toPath(scale(ph,10,55))+'" fill="none" stroke="#FFB144" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>' +
+      '<path d="'+toPath(scale(tds,65,110))+'" fill="none" stroke="#B9852E" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>' +
+      '<path d="'+toPath(scale(temp,120,165))+'" fill="none" stroke="#3FA06B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>';
+  }
+
+  /* ================= geolocalizacion real ================= */
+  function capturarUbicacion(){
+    return new Promise(function(resolve){
+      if(!("geolocation" in navigator)){ resolve({lat:null,lon:null,precision:null}); return; }
+      var resuelto=false;
+      var t=setTimeout(function(){ if(!resuelto){ resuelto=true; resolve({lat:null,lon:null,precision:null}); } }, 8000);
+      navigator.geolocation.getCurrentPosition(
+        function(pos){
+          if(resuelto) return; resuelto=true; clearTimeout(t);
+          resolve({ lat:pos.coords.latitude, lon:pos.coords.longitude, precision:pos.coords.accuracy });
+        },
+        function(){ if(resuelto) return; resuelto=true; clearTimeout(t); resolve({lat:null,lon:null,precision:null}); },
+        { enableHighAccuracy:true, timeout:7500, maximumAge:0 }
+      );
+    });
+  }
+
+  /* ================= envio al backend (Apps Script) ================= */
+  function intentarEnviar(r){
+    var params = new URLSearchParams({
+      key:"ECOSWITCH2026", id:r.id, fecha:r.fecha, hora:r.hora,
+      lat: r.lat==null ? "" : r.lat, lon: r.lon==null ? "" : r.lon,
+      gps_acc: r.precision==null ? "" : r.precision,
+      punto_num:r.puntoNum, punto_nombre:r.puntoNombre, muestra:r.muestra,
+      ph:r.ph, tds:r.tds, temp:r.temp, operador:r.operador, tipo:r.tipo
+    });
+    return fetch(config.backendUrl+"?"+params.toString())
+      .then(function(resp){ return resp.json(); })
+      .then(function(data){ return !!data.ok; })
+      .catch(function(){ return false; });
+  }
+  function marcarSincronizado(id){
+    registros = registros.map(function(r){ return r.id===id ? Object.assign({},r,{sync:"sincronizado"}) : r; });
+    guardar(LS.registros, registros);
+    updateLed();
+  }
+  function reintentarPendientes(){
+    registros.filter(function(r){ return r.sync==="pendiente"; }).forEach(function(r){
+      intentarEnviar(r).then(function(ok){ if(ok) marcarSincronizado(r.id); });
+    });
+  }
+  window.addEventListener("online", reintentarPendientes);
+
+  /* ================= sesion (login = identificador de operador, sin contraseña real) ================= */
+  function goToShell(username){
+    currentUser = username.trim();
+    isDemo = currentUser.toLowerCase()==="demo";
+    if(!isDemo && currentUser){ guardar(LS.lastUser, currentUser); }
+    renderPuntosConfig(); renderPuntoSelect();
+    gpsDisplay.textContent = "— · —";
+    if(isDemo){ fillMetrics(randomPlausible()); } else { clearMetrics(); }
+    drawChart(); updateLed();
+    showView("viewShell");
+  }
+  loginUser.value = cargar(LS.lastUser, "");
+  loginBtn.addEventListener("click", function(){ goToShell(loginUser.value||""); });
+  loginPass.addEventListener("keydown", function(e){ if(e.key==="Enter") goToShell(loginUser.value||""); });
+
+  Array.prototype.forEach.call(document.querySelectorAll(".tab-btn"), function(btn){
+    btn.addEventListener("click", function(){
+      var target=btn.getAttribute("data-tab");
+      Array.prototype.forEach.call(document.querySelectorAll(".tab-btn"), function(b){ b.classList.toggle("active", b===btn); });
+      Array.prototype.forEach.call(document.querySelectorAll(".tabcontent"), function(tc){ tc.classList.toggle("active", tc.id===target); });
+      if(target==="tabGraficos") drawChart();
+    });
+  });
+
+  btnMenu.addEventListener("click", function(){ showView("viewMenu"); });
+  menuBack.addEventListener("click", function(){ showView("viewShell"); });
+  goConfig.addEventListener("click", function(){ showView("viewConfig"); });
+  goInstr.addEventListener("click", function(){ showView("viewInstr"); });
+  configBack.addEventListener("click", function(){ showView("viewMenu"); });
+  instrBack.addEventListener("click", function(){ showView("viewMenu"); });
+  doLogout.addEventListener("click", function(){ loginPass.value=""; showView("viewLogin"); });
+
+  function evaluar(){
+    var ok=true, fueraDeRango=[];
+    var specs=[
+      {key:"ph", el:phEl, label:"pH", unidad:""},
+      {key:"tds", el:tdsEl, label:"TDS", unidad:"ppm"},
+      {key:"temp", el:tempEl, label:"Temperatura", unidad:"°C"}
+    ];
+    specs.forEach(function(s){
+      var v=parseFloat(s.el.value);
+      s.el.classList.remove("warn","bad");
+      if(s.el.value==="" || isNaN(v) || v<HARD[s.key][0] || v>HARD[s.key][1]){ s.el.classList.add("bad"); ok=false; return; }
+      if(v<config[s.key][0] || v>config[s.key][1]){ s.el.classList.add("warn"); fueraDeRango.push({label:s.label, valor:s.el.value, unidad:s.unidad}); }
+    });
+    return {ok:ok, fueraDeRango:fueraDeRango};
+  }
+
+  function mostrarAvisoRango(items){
+    var lineas = items.map(function(it){ return it.label+": <b>"+it.valor+(it.unidad?(" "+it.unidad):"")+"</b>"; }).join("<br>");
+    warnMsg.innerHTML = lineas + "<br><br>¿Registrar de todas formas?";
+    warnModal.classList.add("show");
+  }
+  warnNo.addEventListener("click", function(){ warnModal.classList.remove("show"); pendingConfirm=null; });
+  warnModal.addEventListener("click", function(e){ if(e.target===warnModal){ warnModal.classList.remove("show"); pendingConfirm=null; } });
+  warnYes.addEventListener("click", function(){ warnModal.classList.remove("show"); var fn=pendingConfirm; pendingConfirm=null; if(fn) fn(); });
+
+  function limpiarEstadoCampos(){ phEl.classList.remove("warn","bad"); tdsEl.classList.remove("warn","bad"); tempEl.classList.remove("warn","bad"); }
+
+  function procesarRegistro(){
+    registrarBtn.classList.add("sending");
+
+    // Modo demo: solo animacion de vista previa. No persiste ni intenta enviar nada real.
+    if(isDemo){
+      setTimeout(function(){
+        registrarBtn.classList.remove("sending"); registrarBtn.classList.add("done");
+        setTimeout(function(){
+          registrarBtn.classList.remove("done");
+          fillMetrics(randomPlausible());
+          limpiarEstadoCampos();
+        }, 450);
+      }, 500);
+      return;
+    }
+
+    capturarUbicacion().then(function(ubic){
+      var punto = puntoActual();
+      var muestra = (muestraPorPunto[punto.num]||0)+1;
+      var registro = {
+        id: nuevoId(), fecha: fechaHoy(), hora: horaAhora(),
+        lat: ubic.lat, lon: ubic.lon, precision: ubic.precision,
+        puntoNum: punto.num, puntoNombre: punto.nombre, muestra: muestra,
+        ph: phEl.value, tds: tdsEl.value, temp: tempEl.value,
+        operador: currentUser || "—", tipo: "REAL", sync: "pendiente"
+      };
+
+      registros.push(registro); guardar(LS.registros, registros);
+      muestraPorPunto[punto.num]=muestra; guardar(LS.muestraPorPunto, muestraPorPunto);
+      muestraNum.textContent = String(muestra+1);
+      gpsDisplay.textContent = (ubic.lat!=null) ? ubic.lat.toFixed(6)+" · "+ubic.lon.toFixed(6) : "— · —";
+      updateLed();
+
+      intentarEnviar(registro).then(function(ok){ if(ok) marcarSincronizado(registro.id); });
+
+      registrarBtn.classList.remove("sending"); registrarBtn.classList.add("done");
+      setTimeout(function(){
+        registrarBtn.classList.remove("done");
+        clearMetrics(); limpiarEstadoCampos();
+        drawChart();
+      }, 450);
+    });
+  }
+
+  registrarBtn.addEventListener("click", function(){
+    if(registrarBtn.classList.contains("sending")) return;
+    var r=evaluar();
+    if(!r.ok) return;
+    if(r.fueraDeRango.length>0){ pendingConfirm=procesarRegistro; mostrarAvisoRango(r.fueraDeRango); return; }
+    procesarRegistro();
+  });
+
+  reintentarPendientes();
+})();
+</script>
+</body>
+</html>
