@@ -360,7 +360,7 @@
       </div>
       <div class="cfg-section">
         <div class="cfg-label">URL del backend (Apps Script)</div>
-        <input class="cfg-field" id="cfgUrl" value="https://script.google.com/macros/s/EJEMPLO/exec">
+        <input class="cfg-field" id="cfgUrl" value="">
       </div>
       <div class="cfg-section">
         <div class="cfg-label">Rango esperado — pH</div>
@@ -463,14 +463,27 @@
   function guardar(key, valor){ try{ localStorage.setItem(key, JSON.stringify(valor)); }catch(e){} }
 
   var DEFAULT_CONFIG = {
-    backendUrl:"https://script.google.com/macros/s/EJEMPLO/exec",
+    backendUrl:"https://script.google.com/macros/s/AKfycbweih_a-93HP8COf7llCVJGWSktDqEzkw-GI5xgizfreUoJwZEaVcYAZRrPRAlsK4ktlA/exec",
     ph:[6.0,9.0], tds:[0,600], temp:[5,25]
   };
+
+  // Una URL de backend valida siempre apunta a script.google.com y termina en /exec.
+  // Cualquier otra cosa (por ejemplo, la direccion del repositorio de GitHub) no
+  // puede recibir datos, asi que se descarta y se vuelve a la URL correcta.
+  function urlBackendValida(u){
+    return typeof u === "string" && u.indexOf("script.google.com") !== -1 && u.indexOf("/exec") !== -1;
+  }
 
   var puntos = cargar(LS.puntos, [{num:1,nombre:"Inicio del río"},{num:2,nombre:"Punto medio"},{num:3,nombre:"Desembocadura"}]);
   var puntoCounter = cargar(LS.puntoCounter, 3);
   var muestraPorPunto = cargar(LS.muestraPorPunto, {});
   var config = cargar(LS.config, DEFAULT_CONFIG);
+  // Migracion: si la URL guardada no sirve (version vieja, o pegada por error),
+  // se reemplaza por la correcta sin que el usuario tenga que hacer nada.
+  if(!urlBackendValida(config.backendUrl)){
+    config.backendUrl = DEFAULT_CONFIG.backendUrl;
+    guardar(LS.config, config);
+  }
   var registros = cargar(LS.registros, []);
 
   var loginUser=$("#loginUser"), loginPass=$("#loginPass"), loginPass2=$("#loginPass2"), loginBtn=$("#loginBtn");
@@ -515,8 +528,15 @@
   cfgTempMin.value = config.temp[0]; cfgTempMax.value = config.temp[1];
   [cfgUrl,cfgPhMin,cfgPhMax,cfgTdsMin,cfgTdsMax,cfgTempMin,cfgTempMax].forEach(function(el){
     el.addEventListener("change", function(){
+      var urlEscrita = cfgUrl.value.trim();
+      if(!urlBackendValida(urlEscrita)){
+        // No se guarda una URL que no puede recibir datos: se restaura la anterior.
+        cfgUrl.value = config.backendUrl;
+        alert("Esa dirección no sirve para enviar datos.\n\nDebe ser la del Apps Script: empieza con https://script.google.com/macros/s/... y termina en /exec");
+        return;
+      }
       config = {
-        backendUrl: cfgUrl.value.trim() || DEFAULT_CONFIG.backendUrl,
+        backendUrl: urlEscrita,
         ph:[parseFloat(cfgPhMin.value), parseFloat(cfgPhMax.value)],
         tds:[parseFloat(cfgTdsMin.value), parseFloat(cfgTdsMax.value)],
         temp:[parseFloat(cfgTempMin.value), parseFloat(cfgTempMax.value)]
