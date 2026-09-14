@@ -64,6 +64,13 @@
   .login-brand{ text-align:center; margin-bottom:40px; }
   .login-brand .mark{ font-family:Georgia,"Times New Roman",serif; font-size:28px; color:var(--navy); }
   .login-brand .org{ font-size:11px; color:var(--ink-faint); margin-top:6px; line-height:1.4; }
+  .login-hint{ font-size:12.5px; color:var(--ink-soft); text-align:center; margin-bottom:16px; line-height:1.5; }
+  .login-error{ font-size:12.5px; color:var(--danger); text-align:center; min-height:16px; margin-bottom:6px; }
+  #viewGps{ justify-content:center; align-items:center; padding:0 40px; background:var(--paper); text-align:center; }
+  .gps-wait{ display:flex; flex-direction:column; align-items:center; }
+  .gps-spinner{ width:44px; height:44px; border-radius:50%; border:4px solid var(--field-bg); border-top-color:var(--navy); animation:spin 0.9s linear infinite; margin-bottom:24px; }
+  .gps-wait-title{ font-size:18px; font-weight:700; color:var(--ink); margin-bottom:10px; }
+  .gps-wait-msg{ font-size:13px; color:var(--ink-soft); line-height:1.6; }
   .login-field{ background:var(--field-bg); border:1.5px solid transparent; border-radius:12px; padding:15px 16px;
     font-size:16px; color:var(--ink); margin-bottom:14px; width:100%; font-family:inherit; }
   .login-field:focus{ outline:none; border-color:var(--navy); }
@@ -151,9 +158,11 @@
   .modal-msg{ font-size:14px; color:var(--ink-soft); line-height:1.6; text-align:center; margin-bottom:18px; }
   .modal-msg b{ color:var(--ink); font-family:ui-monospace,Consolas,monospace; }
   .modal-actions{ display:flex; gap:10px; }
+  .modal-actions[hidden]{ display:none; }
   .modal-btn{ flex:1; border:none; border-radius:12px; padding:12px 0; font-size:14.5px; font-weight:700; cursor:pointer; font-family:inherit; }
   .modal-no{ background:var(--field-bg); color:var(--ink); }
   .modal-yes{ background:var(--brass); color:#fff; }
+  .modal-yes.danger{ background:var(--danger); }
 
   .subview{ background:var(--paper); }
   .subbar{ flex:0 0 auto; height:54px; background:linear-gradient(180deg,var(--navy-hi),var(--navy)); color:#fff; display:flex; align-items:center; gap:4px; padding:0 6px; }
@@ -222,12 +231,26 @@
       <div class="mark">ECOSWITCH</div>
       <div class="org">I.E.S. Nuestra Señora de las Mercedes · Abancay</div>
     </div>
-    <input class="login-field" id="loginUser" type="text" placeholder="Usuario" autocomplete="off">
+    <div class="login-hint" id="loginHint">Ingresa tu usuario para comenzar</div>
+    <input class="login-field" id="loginUser" type="text" placeholder="Usuario (ej: Clementinapl)" autocomplete="off" maxlength="12">
     <input class="login-field" id="loginPass" type="password" placeholder="Contraseña" autocomplete="off">
-    <button class="login-btn" id="loginBtn">Ingresar</button>
+    <input class="login-field" id="loginPass2" type="password" placeholder="Repite la contraseña" autocomplete="off" style="display:none;">
+    <div class="login-error" id="loginError"></div>
+    <button class="login-btn" id="loginBtn">Continuar</button>
+  </div>
+
+  <!-- ADQUIRIENDO GPS -->
+  <div class="view" id="viewGps">
+    <div class="gps-wait">
+      <div class="gps-spinner"></div>
+      <div class="gps-wait-title" id="gpsWaitTitle">Buscando ubicación…</div>
+      <div class="gps-wait-msg" id="gpsWaitMsg">Mantén el celular con el cielo despejado. La primera lectura puede tardar unos segundos.</div>
+      <button class="login-btn" id="gpsSkipBtn" style="display:none; margin-top:24px;">Continuar sin ubicación</button>
+    </div>
   </div>
 
   <!-- SHELL -->
+
   <div class="view" id="viewShell">
     <div class="appbar">
       <button class="icon-btn" id="btnMenu" aria-label="Menú">
@@ -364,14 +387,17 @@
 
   <div class="modal-overlay" id="warnModal">
     <div class="modal-card">
-      <div class="modal-icon">
+      <div class="modal-icon" id="warnIcon">
         <svg width="34" height="34" viewBox="0 0 24 24" fill="none"><path d="M12 3l10 18H2L12 3z" stroke="#B9852E" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 10v4" stroke="#B9852E" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="17.3" r="1" fill="#B9852E"/></svg>
       </div>
-      <div class="modal-title">Valor fuera de lo esperado</div>
+      <div class="modal-title" id="warnTitle">Valor fuera de lo esperado</div>
       <div class="modal-msg" id="warnMsg"></div>
-      <div class="modal-actions">
+      <div class="modal-actions" id="warnActionsConfirm">
         <button class="modal-btn modal-no" id="warnNo">No</button>
         <button class="modal-btn modal-yes" id="warnYes">Sí, registrar</button>
+      </div>
+      <div class="modal-actions" id="warnActionsOk">
+        <button class="modal-btn modal-yes" id="warnOk">Entendido</button>
       </div>
     </div>
   </div>
@@ -381,7 +407,7 @@
 (function(){
   "use strict";
   var $ = function(sel){ return document.querySelector(sel); };
-  var views = ["viewLogin","viewShell","viewMenu","viewConfig","viewInstr"];
+  var views = ["viewLogin","viewGps","viewShell","viewMenu","viewConfig","viewInstr"];
   function showView(id){ views.forEach(function(v){ $("#"+v).classList.toggle("active", v===id); }); }
 
   /* ================= registro del service worker ================= */
@@ -394,7 +420,8 @@
   /* ================= persistencia local (localStorage) ================= */
   var LS = {
     puntos:"eco_puntos", puntoCounter:"eco_puntoCounter", muestraPorPunto:"eco_muestraPorPunto",
-    config:"eco_config", theme:"eco_theme", lastUser:"eco_lastUser", registros:"eco_registros"
+    config:"eco_config", theme:"eco_theme", lastUser:"eco_lastUser", registros:"eco_registros",
+    usuarios:"eco_usuarios"
   };
   function cargar(key, porDefecto){
     try{ var v=localStorage.getItem(key); return v!=null ? JSON.parse(v) : porDefecto; }
@@ -413,7 +440,9 @@
   var config = cargar(LS.config, DEFAULT_CONFIG);
   var registros = cargar(LS.registros, []);
 
-  var loginUser=$("#loginUser"), loginPass=$("#loginPass"), loginBtn=$("#loginBtn");
+  var loginUser=$("#loginUser"), loginPass=$("#loginPass"), loginPass2=$("#loginPass2"), loginBtn=$("#loginBtn");
+  var loginHint=$("#loginHint"), loginError=$("#loginError");
+  var gpsWaitTitle=$("#gpsWaitTitle"), gpsWaitMsg=$("#gpsWaitMsg"), gpsSkipBtn=$("#gpsSkipBtn");
   var clock=$("#clock");
   var puntoSel=$("#punto"), muestraNum=$("#muestraNum");
   var phEl=$("#ph"), tdsEl=$("#tds"), tempEl=$("#temp"), gpsDisplay=$("#gpsDisplay");
@@ -422,11 +451,14 @@
   var configBack=$("#configBack"), instrBack=$("#instrBack");
   var puntosList=$("#puntosList"), nuevoPuntoNombre=$("#nuevoPuntoNombre"), addPuntoBtn=$("#addPuntoBtn");
   var warnModal=$("#warnModal"), warnMsg=$("#warnMsg"), warnNo=$("#warnNo"), warnYes=$("#warnYes");
+  var warnTitle=$("#warnTitle"), warnActionsConfirm=$("#warnActionsConfirm"), warnActionsOk=$("#warnActionsOk"), warnOk=$("#warnOk");
   var cfgUrl=$("#cfgUrl"), cfgPhMin=$("#cfgPhMin"), cfgPhMax=$("#cfgPhMax"), cfgTdsMin=$("#cfgTdsMin"),
       cfgTdsMax=$("#cfgTdsMax"), cfgTempMin=$("#cfgTempMin"), cfgTempMax=$("#cfgTempMax");
 
   var isDemo=false, currentUser="";
   var pendingConfirm=null;
+  var ubicacionActual={lat:null,lon:null,precision:null};   // capturada al entrar y refrescada tras cada registro
+  var usuarios = cargar(LS.usuarios, {});                    // { nick: {pass:"..."} } — solo en este celular
   var HARD={ph:[0,16], tds:[0,9990], temp:[-50,300]};
 
   function pad(n){ return String(n).length<2 ? "0"+n : String(n); }
@@ -434,7 +466,14 @@
 
   function fechaHoy(){ var d=new Date(); return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()); }
   function horaAhora(){ var d=new Date(); return pad(d.getHours())+":"+pad(d.getMinutes()); }
-  function nuevoId(){ return "M-"+Date.now().toString(36)+"-"+Math.random().toString(36).slice(2,6); }
+  function nuevoId(){
+    // Contador secuencial por usuario, guardado localmente. Formato: M-Clementinapl-0001
+    var claveCont = "eco_cont_" + currentUser;
+    var n = cargar(claveCont, 0) + 1;
+    guardar(claveCont, n);
+    var secuencia = ("0000" + n).slice(-4);
+    return "M-" + currentUser + "-" + secuencia;
+  }
 
   /* ================= configuracion: cargar valores guardados en la UI ================= */
   cfgUrl.value = config.backendUrl;
@@ -559,17 +598,128 @@
     return new Promise(function(resolve){
       if(!("geolocation" in navigator)){ resolve({lat:null,lon:null,precision:null}); return; }
       var resuelto=false;
-      var t=setTimeout(function(){ if(!resuelto){ resuelto=true; resolve({lat:null,lon:null,precision:null}); } }, 8000);
+      // 20s: el "primer fix" del GPS en zona abierta puede tardar bastante mas que
+      // las lecturas siguientes. Se le da margen para no cortar la primera medicion.
+      var t=setTimeout(function(){ if(!resuelto){ resuelto=true; resolve({lat:null,lon:null,precision:null}); } }, 20000);
       navigator.geolocation.getCurrentPosition(
         function(pos){
           if(resuelto) return; resuelto=true; clearTimeout(t);
           resolve({ lat:pos.coords.latitude, lon:pos.coords.longitude, precision:pos.coords.accuracy });
         },
         function(){ if(resuelto) return; resuelto=true; clearTimeout(t); resolve({lat:null,lon:null,precision:null}); },
-        { enableHighAccuracy:true, timeout:7500, maximumAge:0 }
+        { enableHighAccuracy:true, timeout:19000, maximumAge:0 }
       );
     });
   }
+
+  function mostrarUbicacionEnPantalla(){
+    if(ubicacionActual.lat!=null){
+      gpsDisplay.textContent = ubicacionActual.lat.toFixed(6)+" · "+ubicacionActual.lon.toFixed(6);
+    } else {
+      gpsDisplay.textContent = "— · —";
+    }
+  }
+
+  /* ================= sesion: registro y login locales ================= */
+  // Normaliza el nick: minusculas, sin acentos, sin espacios, solo letras y numeros, max 12.
+  function normalizarNick(txt){
+    var s = (txt||"").toLowerCase().trim();
+    s = s.normalize("NFD").replace(/[\u0300-\u036f]/g, ""); // quita acentos: Concepción -> concepcion
+    s = s.replace(/[^a-z0-9]/g, "");                         // quita espacios y simbolos
+    return s.slice(0, 12);
+  }
+
+  function actualizarModoLogin(){
+    var nick = normalizarNick(loginUser.value);
+    loginError.textContent = "";
+    if(nick === "demo"){
+      loginHint.textContent = "Modo demostración: los valores se generan solos, no se guardan.";
+      loginPass2.style.display = "none";
+      loginBtn.textContent = "Entrar en modo demo";
+    } else if(nick && usuarios[nick]){
+      loginHint.textContent = "Bienvenida de nuevo, " + nick + ". Escribe tu contraseña.";
+      loginPass2.style.display = "none";
+      loginBtn.textContent = "Ingresar";
+    } else if(nick){
+      loginHint.textContent = "Usuario nuevo. Crea una contraseña para registrarte en este celular.";
+      loginPass2.style.display = "block";
+      loginBtn.textContent = "Registrarme";
+    } else {
+      loginHint.textContent = "Ingresa tu usuario para comenzar";
+      loginPass2.style.display = "none";
+      loginBtn.textContent = "Continuar";
+    }
+  }
+  loginUser.addEventListener("input", actualizarModoLogin);
+
+  function iniciarSesion(){
+    loginError.textContent = "";
+    var nick = normalizarNick(loginUser.value);
+
+    if(!nick){ loginError.textContent = "Escribe un usuario."; return; }
+
+    // Modo demo: entra sin contraseña real.
+    if(nick === "demo"){ entrarAlSistema("demo", true); return; }
+
+    var pass = loginPass.value;
+    if(usuarios[nick]){
+      // Usuario existente: validar contraseña contra la guardada en este celular.
+      if(pass !== usuarios[nick].pass){ loginError.textContent = "Contraseña incorrecta."; return; }
+    } else {
+      // Usuario nuevo: exigir contraseña y confirmación.
+      if(pass.length < 3){ loginError.textContent = "La contraseña debe tener al menos 3 caracteres."; return; }
+      if(pass !== loginPass2.value){ loginError.textContent = "Las contraseñas no coinciden."; return; }
+      usuarios[nick] = { pass: pass };
+      guardar(LS.usuarios, usuarios);
+    }
+    entrarAlSistema(nick, false);
+  }
+
+  function entrarAlSistema(nick, demo){
+    currentUser = nick;
+    isDemo = demo;
+    if(!demo){ guardar(LS.lastUser, nick); }
+    loginPass.value = ""; loginPass2.value = "";
+
+    renderPuntosConfig(); renderPuntoSelect();
+    if(isDemo){ fillMetrics(randomPlausible()); } else { clearMetrics(); }
+    drawChart(); updateLed();
+
+    if(isDemo){
+      // El modo demo no usa GPS real: entra directo con coordenadas vacias.
+      ubicacionActual = {lat:null,lon:null,precision:null};
+      mostrarUbicacionEnPantalla();
+      showView("viewShell");
+      return;
+    }
+
+    // Usuario real: capturar GPS ANTES de mostrar el formulario, para que el
+    // primer registro ya tenga coordenadas (soluciona el problema de la 1ra fila).
+    showView("viewGps");
+    gpsWaitTitle.textContent = "Buscando ubicación…";
+    gpsWaitMsg.textContent = "Mantén el celular con el cielo despejado. La primera lectura puede tardar unos segundos.";
+    gpsSkipBtn.style.display = "none";
+    var skipTimer = setTimeout(function(){ gpsSkipBtn.style.display = "block"; }, 8000);
+
+    capturarUbicacion().then(function(ubic){
+      clearTimeout(skipTimer);
+      ubicacionActual = ubic;
+      mostrarUbicacionEnPantalla();
+      showView("viewShell");
+    });
+  }
+
+  gpsSkipBtn.addEventListener("click", function(){
+    ubicacionActual = {lat:null,lon:null,precision:null};
+    mostrarUbicacionEnPantalla();
+    showView("viewShell");
+  });
+
+  loginUser.value = cargar(LS.lastUser, "");
+  actualizarModoLogin();
+  loginBtn.addEventListener("click", iniciarSesion);
+  loginPass.addEventListener("keydown", function(e){ if(e.key==="Enter") iniciarSesion(); });
+  loginPass2.addEventListener("keydown", function(e){ if(e.key==="Enter") iniciarSesion(); });
 
   /* ================= envio al backend (Apps Script) ================= */
   function intentarEnviar(r){
@@ -598,20 +748,6 @@
   window.addEventListener("online", reintentarPendientes);
 
   /* ================= sesion (login = identificador de operador, sin contraseña real) ================= */
-  function goToShell(username){
-    currentUser = username.trim();
-    isDemo = currentUser.toLowerCase()==="demo";
-    if(!isDemo && currentUser){ guardar(LS.lastUser, currentUser); }
-    renderPuntosConfig(); renderPuntoSelect();
-    gpsDisplay.textContent = "— · —";
-    if(isDemo){ fillMetrics(randomPlausible()); } else { clearMetrics(); }
-    drawChart(); updateLed();
-    showView("viewShell");
-  }
-  loginUser.value = cargar(LS.lastUser, "");
-  loginBtn.addEventListener("click", function(){ goToShell(loginUser.value||""); });
-  loginPass.addEventListener("keydown", function(e){ if(e.key==="Enter") goToShell(loginUser.value||""); });
-
   Array.prototype.forEach.call(document.querySelectorAll(".tab-btn"), function(btn){
     btn.addEventListener("click", function(){
       var target=btn.getAttribute("data-tab");
@@ -627,10 +763,10 @@
   goInstr.addEventListener("click", function(){ showView("viewInstr"); });
   configBack.addEventListener("click", function(){ showView("viewMenu"); });
   instrBack.addEventListener("click", function(){ showView("viewMenu"); });
-  doLogout.addEventListener("click", function(){ loginPass.value=""; showView("viewLogin"); });
+  doLogout.addEventListener("click", function(){ loginPass.value=""; loginPass2.value=""; actualizarModoLogin(); showView("viewLogin"); });
 
   function evaluar(){
-    var ok=true, fueraDeRango=[];
+    var ok=true, fueraDeRango=[], fueraDeLimite=[];
     var specs=[
       {key:"ph", el:phEl, label:"pH", unidad:""},
       {key:"tds", el:tdsEl, label:"TDS", unidad:"ppm"},
@@ -639,18 +775,35 @@
     specs.forEach(function(s){
       var v=parseFloat(s.el.value);
       s.el.classList.remove("warn","bad");
-      if(s.el.value==="" || isNaN(v) || v<HARD[s.key][0] || v>HARD[s.key][1]){ s.el.classList.add("bad"); ok=false; return; }
+      if(s.el.value==="" || isNaN(v)){ s.el.classList.add("bad"); ok=false; return; }
+      if(v<HARD[s.key][0] || v>HARD[s.key][1]){
+        s.el.classList.add("bad"); ok=false;
+        fueraDeLimite.push({label:s.label, valor:s.el.value, unidad:s.unidad, min:HARD[s.key][0], max:HARD[s.key][1]});
+        return;
+      }
       if(v<config[s.key][0] || v>config[s.key][1]){ s.el.classList.add("warn"); fueraDeRango.push({label:s.label, valor:s.el.value, unidad:s.unidad}); }
     });
-    return {ok:ok, fueraDeRango:fueraDeRango};
+    return {ok:ok, fueraDeRango:fueraDeRango, fueraDeLimite:fueraDeLimite};
   }
 
   function mostrarAvisoRango(items){
     var lineas = items.map(function(it){ return it.label+": <b>"+it.valor+(it.unidad?(" "+it.unidad):"")+"</b>"; }).join("<br>");
+    warnTitle.textContent = "Valor fuera de lo esperado";
     warnMsg.innerHTML = lineas + "<br><br>¿Registrar de todas formas?";
+    warnActionsConfirm.hidden = false; warnActionsOk.hidden = true;
+    warnModal.classList.add("show");
+  }
+  function mostrarBloqueoLimite(items){
+    var lineas = items.map(function(it){
+      return it.label+": <b>"+it.valor+(it.unidad?(" "+it.unidad):"")+"</b> — límite del instrumento: "+it.min+" a "+it.max+(it.unidad?(" "+it.unidad):"");
+    }).join("<br>");
+    warnTitle.textContent = "Valor fuera del límite del instrumento";
+    warnMsg.innerHTML = lineas;
+    warnActionsConfirm.hidden = true; warnActionsOk.hidden = false;
     warnModal.classList.add("show");
   }
   warnNo.addEventListener("click", function(){ warnModal.classList.remove("show"); pendingConfirm=null; });
+  warnOk.addEventListener("click", function(){ warnModal.classList.remove("show"); });
   warnModal.addEventListener("click", function(e){ if(e.target===warnModal){ warnModal.classList.remove("show"); pendingConfirm=null; } });
   warnYes.addEventListener("click", function(){ warnModal.classList.remove("show"); var fn=pendingConfirm; pendingConfirm=null; if(fn) fn(); });
 
@@ -672,37 +825,46 @@
       return;
     }
 
-    capturarUbicacion().then(function(ubic){
-      var punto = puntoActual();
-      var muestra = (muestraPorPunto[punto.num]||0)+1;
-      var registro = {
-        id: nuevoId(), fecha: fechaHoy(), hora: horaAhora(),
-        lat: ubic.lat, lon: ubic.lon, precision: ubic.precision,
-        puntoNum: punto.num, puntoNombre: punto.nombre, muestra: muestra,
-        ph: phEl.value, tds: tdsEl.value, temp: tempEl.value,
-        operador: currentUser || "—", tipo: "REAL", sync: "pendiente"
-      };
+    // Se usa la ubicacion YA capturada (al entrar, o refrescada tras el registro
+    // anterior). No se recaptura aqui, para no meter una demora entre presionar
+    // Registrar y ver el dato guardado.
+    var ubic = ubicacionActual;
+    var punto = puntoActual();
+    var muestra = (muestraPorPunto[punto.num]||0)+1;
+    var registro = {
+      id: nuevoId(), fecha: fechaHoy(), hora: horaAhora(),
+      lat: ubic.lat, lon: ubic.lon, precision: ubic.precision,
+      puntoNum: punto.num, puntoNombre: punto.nombre, muestra: muestra,
+      ph: phEl.value, tds: tdsEl.value, temp: tempEl.value,
+      operador: currentUser || "—", tipo: "REAL", sync: "pendiente"
+    };
 
-      registros.push(registro); guardar(LS.registros, registros);
-      muestraPorPunto[punto.num]=muestra; guardar(LS.muestraPorPunto, muestraPorPunto);
-      muestraNum.textContent = String(muestra+1);
-      gpsDisplay.textContent = (ubic.lat!=null) ? ubic.lat.toFixed(6)+" · "+ubic.lon.toFixed(6) : "— · —";
-      updateLed();
+    registros.push(registro); guardar(LS.registros, registros);
+    muestraPorPunto[punto.num]=muestra; guardar(LS.muestraPorPunto, muestraPorPunto);
+    muestraNum.textContent = String(muestra+1);
+    updateLed();
 
-      intentarEnviar(registro).then(function(ok){ if(ok) marcarSincronizado(registro.id); });
+    intentarEnviar(registro).then(function(ok){ if(ok) marcarSincronizado(registro.id); });
 
-      registrarBtn.classList.remove("sending"); registrarBtn.classList.add("done");
-      setTimeout(function(){
-        registrarBtn.classList.remove("done");
-        clearMetrics(); limpiarEstadoCampos();
-        drawChart();
-      }, 450);
+    registrarBtn.classList.remove("sending"); registrarBtn.classList.add("done");
+    setTimeout(function(){
+      registrarBtn.classList.remove("done");
+      clearMetrics(); limpiarEstadoCampos();
+      drawChart();
+    }, 450);
+
+    // Refrescar la ubicacion para el PROXIMO registro, en segundo plano, sin
+    // bloquear. Si el equipo se movio a otro punto, la siguiente medicion ya
+    // tendra coordenadas nuevas.
+    capturarUbicacion().then(function(nueva){
+      if(nueva.lat!=null){ ubicacionActual = nueva; mostrarUbicacionEnPantalla(); }
     });
   }
 
   registrarBtn.addEventListener("click", function(){
     if(registrarBtn.classList.contains("sending")) return;
     var r=evaluar();
+    if(r.fueraDeLimite.length>0){ mostrarBloqueoLimite(r.fueraDeLimite); return; }
     if(!r.ok) return;
     if(r.fueraDeRango.length>0){ pendingConfirm=procesarRegistro; mostrarAvisoRango(r.fueraDeRango); return; }
     procesarRegistro();
