@@ -221,6 +221,10 @@
   .lh-punto{ font-size:12px; color:var(--ink-soft); display:block; }
   .lh-vals{ font-size:13px; color:var(--ink); font-family:ui-monospace,Consolas,monospace; }
   .lh-vals b{ font-weight:700; }
+  .sw-row{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:8px; }
+  .sw-txt{ font-size:13.5px; color:var(--ink); }
+  .sw-mini{ flex:0 0 auto; width:104px; }
+  .sw-mini button{ font-size:12.5px; padding:7px 0; }
   .theme-toggle{ display:flex; background:var(--field-bg); border-radius:10px; overflow:hidden; }
   .theme-toggle button{ flex:1; border:none; background:transparent; color:var(--ink-soft); font-family:inherit; font-size:13.5px;
     font-weight:600; padding:10px 0; cursor:pointer; }
@@ -357,6 +361,10 @@
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 20h16M6 16.5V20h3.5L19 10.5l-3.5-3.5L6 16.5z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
         Registrar mediciones
       </button>
+      <button class="menu-item" id="goLista">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M6 5h10M6 10h10M6 15h10" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="3" cy="5" r="1.1" fill="currentColor"/><circle cx="3" cy="10" r="1.1" fill="currentColor"/><circle cx="3" cy="15" r="1.1" fill="currentColor"/></svg>
+        Registros de hoy
+      </button>
       <button class="menu-item" id="goConfig">
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="2.6" stroke="currentColor" stroke-width="1.5"/><path d="M10 2.5v2M10 15.5v2M17.5 10h-2M4.5 10h-2M15.4 4.6l-1.4 1.4M6 12.6l-1.4 1.4M15.4 15.4l-1.4-1.4M6 7.4L4.6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
         Configuración
@@ -381,15 +389,21 @@
     <div class="subbar"><button class="icon-btn" id="configBack"><svg width="20" height="20" viewBox="0 0 20 20"><path d="M12.5 4l-6 6 6 6" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button><span class="title">Configuración</span></div>
     <div class="subbody">
       <div class="cfg-section">
-        <div class="cfg-label">Registros de hoy</div>
-        <div id="listaHoy" class="lista-hoy"></div>
-      </div>
-      <div class="cfg-section">
         <div class="cfg-label">Apariencia</div>
         <div class="theme-toggle">
           <button data-theme-choice="light" class="active">Claro</button>
           <button data-theme-choice="dark">Oscuro</button>
         </div>
+      </div>
+      <div class="cfg-section">
+        <div class="cfg-label">Avisos al confirmar el envío</div>
+        <div class="sw-row"><span class="sw-txt">Sonido (dos pitidos)</span>
+          <div class="theme-toggle sw-mini"><button data-sw="sonido" data-val="1">Sí</button><button data-sw="sonido" data-val="0">No</button></div>
+        </div>
+        <div class="sw-row"><span class="sw-txt">Vibración</span>
+          <div class="theme-toggle sw-mini"><button data-sw="vibracion" data-val="1">Sí</button><button data-sw="vibracion" data-val="0">No</button></div>
+        </div>
+        <div class="cfg-hard" style="margin-top:6px;">Solo suena cuando la nube confirma que el dato llegó. Útil cuando el sol impide ver el punto de color.</div>
       </div>
       <div class="cfg-section">
         <div class="cfg-label">Puntos de muestreo</div>
@@ -426,6 +440,15 @@
     </div>
   </div>
 
+  <!-- REGISTROS DE HOY -->
+  <div class="view subview" id="viewLista">
+    <div class="subbar"><button class="icon-btn" id="listaBack"><svg width="20" height="20" viewBox="0 0 20 20"><path d="M12.5 4l-6 6 6 6" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button><span class="title">Registros de hoy</span></div>
+    <div class="subbody">
+      <div class="cfg-hard" id="listaResumen" style="margin-bottom:10px;"></div>
+      <div id="listaHoy" class="lista-hoy"></div>
+    </div>
+  </div>
+
   <!-- INSTRUCCIONES -->
   <div class="view subview" id="viewInstr">
     <div class="subbar"><button class="icon-btn" id="instrBack"><svg width="20" height="20" viewBox="0 0 20 20"><path d="M12.5 4l-6 6 6 6" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button><span class="title">Instrucciones</span></div>
@@ -439,11 +462,16 @@
          3. Presiona <b>Registrar</b>.</p>
       <p>Después de registrar, las casillas se limpian solas y el número de muestra avanza, listo para la siguiente.</p>
 
-      <h3>El punto de color</h3>
-      <p><b>Verde:</b> todo enviado, no queda nada pendiente.<br>
-         <b>Ámbar:</b> hay mediciones guardadas en el celular esperando señal.<br>
-         <b>Rojo parpadeando:</b> enviando en este momento.</p>
-      <p>Si queda en ámbar, no se perdió nada: la app reintenta sola cuando vuelve la señal.</p>
+      <h3>Formato de los valores</h3>
+      <p>Cada casilla admite exactamente los decimales que entrega su instrumento: <b>pH</b> dos decimales (7.56), <b>TDS</b> número entero (312), <b>Temperatura</b> un decimal (18.7). Si escribes de más, la app recorta sola; si escribes de menos, completa al salir de la casilla. Así todos los registros quedan con el mismo formato.</p>
+
+      <h3>El punto de color, arriba a la derecha</h3>
+      <p><b>Rojo parpadeando:</b> está transmitiendo. El envío real suele durar menos de un segundo, pero el parpadeo se mantiene tres segundos a propósito, para que dé tiempo a verlo.</p>
+      <p><b>Verde:</b> la nube confirmó que el dato llegó. No queda nada pendiente.</p>
+      <p><b>Ámbar:</b> no hay señal disponible en este momento. La medición quedó guardada en el celular y se reintentará sola. <b>No se pierde ningún dato.</b> Cuando vuelva la señal, los pendientes se envían uno tras otro, en el mismo orden en que fueron registrados.</p>
+
+      <h3>Aviso sonoro y vibración</h3>
+      <p>Al confirmarse el envío, el celular emite dos pitidos cortos y vibra brevemente. Sirve para cuando el sol impide ver la pantalla. Solo avisa cuando la nube confirmó de verdad; si no suena, es que quedó pendiente. Ambos avisos se pueden desactivar en Configuración.</p>
 
       <h3>Si un valor sale raro</h3>
       <p>Si escribes algo fuera de lo normal para el río, la app lo muestra y pregunta si quieres registrarlo igual. Si el valor es imposible para el instrumento, lo bloquea y te lo explica.</p>
@@ -451,11 +479,14 @@
       <h3>Si te equivocaste</h3>
       <p>Menú → <b>Eliminar último registro</b>. Muestra los datos de la última medición y pregunta antes de borrarla. Solo se puede borrar la última, y hay que volver a escribir los tres valores.</p>
 
-      <h3>Revisar lo registrado hoy</h3>
-      <p>Menú → <b>Configuración</b> → arriba del todo está <b>Registros de hoy</b>, con la lista de todas las mediciones del día para comprobarlas contra tu libreta.</p>
+      <h3>Revisar lo registrado</h3>
+      <p>Menú → <b>Registros de hoy</b>: la lista de todas las mediciones del día, con su número, el punto y los tres valores, para compararla con la libreta de campo. Arriba indica cuántas hay y si quedan pendientes por enviar.</p>
+
+      <h3>Sobre el gráfico</h3>
+      <p>El gráfico sirve para ver la <b>tendencia</b> —si un valor sube o baja con el tiempo—, no para comparar los tres parámetros entre sí. Sus escalas son muy distintas: el TDS se cuenta en cientos, mientras el pH va de 0 a 14 y la temperatura en decenas. Para leer valores exactos conviene usar <b>Registros de hoy</b> o la tabla del sitio web.</p>
 
       <h3>Puntos de muestreo</h3>
-      <p>Se crean y se renombran en Configuración → Puntos de muestreo. El número lo asigna la app sola; no hay un límite de cuántos puedes tener.</p>
+      <p>Se crean y se renombran en Configuración → Puntos de muestreo. El número lo asigna la app sola; no hay límite de cuántos puedes tener.</p>
 
       <h3>Apariencia</h3>
       <p>En Configuración puedes cambiar entre modo claro (mejor bajo techo o en proyector) y modo oscuro (mejor bajo sol directo).</p>
@@ -486,7 +517,7 @@
 (function(){
   "use strict";
   var $ = function(sel){ return document.querySelector(sel); };
-  var views = ["viewLogin","viewGps","viewShell","viewMenu","viewConfig","viewInstr"];
+  var views = ["viewLogin","viewGps","viewShell","viewMenu","viewConfig","viewLista","viewInstr"];
   function showView(id){ views.forEach(function(v){ $("#"+v).classList.toggle("active", v===id); }); }
 
   /* ================= registro del service worker ================= */
@@ -535,7 +566,8 @@
 
   var DEFAULT_CONFIG = {
     backendUrl:"https://script.google.com/macros/s/AKfycbweih_a-93HP8COf7llCVJGWSktDqEzkw-GI5xgizfreUoJwZEaVcYAZRrPRAlsK4ktlA/exec",
-    ph:[6.0,9.0], tds:[0,600], temp:[5,25]
+    ph:[6.0,9.0], tds:[0,600], temp:[5,25],
+    sonido:true, vibracion:true
   };
 
   // Una URL de backend valida siempre apunta a script.google.com y termina en /exec.
@@ -555,6 +587,10 @@
     config.backendUrl = DEFAULT_CONFIG.backendUrl;
     guardar(LS.config, config);
   }
+  // Migracion: configuraciones guardadas antes de existir estas opciones no las
+  // traen. Se activan por defecto, en vez de quedar como "desactivadas".
+  if(typeof config.sonido !== "boolean"){ config.sonido = true; guardar(LS.config, config); }
+  if(typeof config.vibracion !== "boolean"){ config.vibracion = true; guardar(LS.config, config); }
   var registros = cargar(LS.registros, []);
 
   var loginUser=$("#loginUser"), loginPass=$("#loginPass"), loginPass2=$("#loginPass2"), loginBtn=$("#loginBtn");
@@ -578,6 +614,34 @@
   var ubicacionActual={lat:null,lon:null,precision:null};   // capturada al entrar y refrescada tras cada registro
   var usuarios = cargar(LS.usuarios, {});                    // { nick: {pass:"..."} } — solo en este celular
   var HARD={ph:[0,16], tds:[0,9990], temp:[-50,300]};
+
+  /* ---------- aviso sonoro y vibracion al confirmar el envio ---------- */
+  var audioCtx = null;
+  function beepDoble(){
+    if(!config.sonido) return;
+    try{
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if(!AC) return;
+      if(!audioCtx) audioCtx = new AC();
+      if(audioCtx.state === "suspended") audioCtx.resume();
+      [0, 170].forEach(function(retardo){
+        var t = audioCtx.currentTime + retardo/1000;
+        var osc = audioCtx.createOscillator(), g = audioCtx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(1150, t);
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(0.32, t+0.012);
+        g.gain.exponentialRampToValueAtTime(0.0001, t+0.10);
+        osc.connect(g); g.connect(audioCtx.destination);
+        osc.start(t); osc.stop(t+0.12);
+      });
+    }catch(e){}
+  }
+  function vibrarCorto(){
+    if(!config.vibracion) return;
+    try{ if(navigator.vibrate) navigator.vibrate([55,70,55]); }catch(e){}
+  }
+  function avisarExito(){ beepDoble(); vibrarCorto(); }
 
   function pad(n){ return String(n).length<2 ? "0"+n : String(n); }
   
@@ -630,19 +694,60 @@
     });
   });
 
-  function randomPlausible(){ return { ph:(7.2+Math.random()*1.0).toFixed(2), tds:Math.round(160+Math.random()*170), temp:(11.5+Math.random()*4.5).toFixed(1) }; }
+  function randomPlausible(){ return { ph:(7.2+Math.random()*1.0).toFixed(2), tds:String(Math.round(160+Math.random()*170)), temp:(11.5+Math.random()*4.5).toFixed(1) }; }
   function fillMetrics(v){ phEl.value=v.ph; tdsEl.value=v.tds; tempEl.value=v.temp; }
   function clearMetrics(){ phEl.value=""; tdsEl.value=""; tempEl.value=""; }
 
+  /* Cada medidor comercial entrega una cantidad fija de decimales. Se limita la
+     escritura a esa cantidad y se normaliza al salir del campo, para que todos
+     los registros queden con el mismo formato:
+       pH   -> 2 decimales  (ej. 7.56)
+       TDS  -> entero       (ej. 312)
+       Temp -> 1 decimal    (ej. 18.7)                                        */
+  var DECIMALES = { ph:2, tds:0, temp:1 };
+
   function sanitize(el, neg, dec){
     el.addEventListener("input", function(){
-      var v=el.value, allowed="0123456789"+(dec?".":"")+(neg?"-":""), out="";
-      for(var i=0;i<v.length;i++){ var ch=v[i]; if(allowed.indexOf(ch)===-1) continue;
-        if(ch==="." && out.indexOf(".")!==-1) continue; if(ch==="-" && out.length!==0) continue; out+=ch; }
-      el.value=out; el.classList.remove("warn","bad");
+      // El teclado numerico de Android ofrece coma: se trata como punto decimal.
+      // Si se descartara, "7,56" se convertiria en "756" sin que nadie lo note.
+      var v = el.value.replace(/,/g, ".");
+      var out = "";
+      for(var i=0;i<v.length;i++){
+        var ch = v[i];
+        if(ch === "-"){ if(neg && out.length===0) out += ch; continue; }
+        if(ch === "."){
+          // En campos enteros el punto corta el valor: "312.7" -> "312",
+          // nunca "3127", que seria un error de magnitud grave.
+          if(dec === 0) break;
+          if(out.indexOf(".") !== -1) continue;
+          out += ch; continue;
+        }
+        if(ch >= "0" && ch <= "9"){ out += ch; continue; }
+      }
+      var pto = out.indexOf(".");
+      if(pto !== -1 && out.length - pto - 1 > dec){
+        out = out.slice(0, pto + 1 + dec);
+      }
+      el.value = out; el.classList.remove("warn","bad");
     });
+    // al salir del campo, dejar el valor con los decimales exactos del instrumento
+    el.addEventListener("blur", function(){ normalizarCampo(el, dec); });
   }
-  sanitize(phEl,false,true); sanitize(tdsEl,false,false); sanitize(tempEl,true,true);
+
+  function normalizarCampo(el, dec){
+    var v = el.value.trim().replace(/,/g, ".");
+    if(v==="" || v==="-" || v===".") return;
+    var n = parseFloat(v);
+    if(!isFinite(n)) return;
+    el.value = n.toFixed(dec);
+  }
+  function normalizarTodos(){
+    normalizarCampo(phEl, DECIMALES.ph);
+    normalizarCampo(tdsEl, DECIMALES.tds);
+    normalizarCampo(tempEl, DECIMALES.temp);
+  }
+
+  sanitize(phEl,false,DECIMALES.ph); sanitize(tdsEl,false,DECIMALES.tds); sanitize(tempEl,true,DECIMALES.temp);
 
   /* ================= puntos de muestreo (persistentes) ================= */
   function puntoActual(){
@@ -891,9 +996,25 @@
     guardar(LS.registros, registros);
     updateLed();
   }
+  var reintentoEnCurso = false;
   function reintentarPendientes(){
-    registros.filter(function(r){ return r.sync==="pendiente"; }).forEach(function(r){
-      intentarEnviar(r).then(function(ok){ if(ok) marcarSincronizado(r.id); });
+    if(reintentoEnCurso) return;
+    var cola = registros.filter(function(r){ return r.sync==="pendiente"; });
+    if(cola.length===0) return;
+    reintentoEnCurso = true;
+    var huboExito = false;
+    // Envio SECUENCIAL, uno tras otro: asi los registros llegan a la hoja en el
+    // mismo orden en que fueron tomados. Si se dispararan todos a la vez, el
+    // orden de llegada dependeria de la red y podria invertirse.
+    cola.reduce(function(cadena, r){
+      return cadena.then(function(){
+        return intentarEnviar(r).then(function(ok){
+          if(ok){ marcarSincronizado(r.id); huboExito = true; }
+        });
+      });
+    }, Promise.resolve()).then(function(){
+      reintentoEnCurso = false;
+      if(huboExito && !hayPendientes()){ avisarExito(); }
     });
   }
   window.addEventListener("online", reintentarPendientes);
@@ -908,7 +1029,9 @@
   menuBack.addEventListener("click", function(){ showView("viewShell"); });
   $("#goGraficos").addEventListener("click", function(){ mostrarTab("tabGraficos"); showView("viewShell"); });
   $("#goRegistrar").addEventListener("click", function(){ mostrarTab("tabRegistrar"); showView("viewShell"); });
-  goConfig.addEventListener("click", function(){ refrescarContadorInfo(); renderListaHoy(); showView("viewConfig"); });
+  goConfig.addEventListener("click", function(){ refrescarContadorInfo(); pintarSwitches(); showView("viewConfig"); });
+  $("#goLista").addEventListener("click", function(){ renderListaHoy(); showView("viewLista"); });
+  $("#listaBack").addEventListener("click", function(){ showView("viewMenu"); });
 
   // ---- Eliminar el ultimo registro (solo el ultimo, y se borra completo) ----
   $("#goBorrar").addEventListener("click", function(){
@@ -962,9 +1085,16 @@
     var cont = $("#listaHoy");
     var hoy = fechaHoy();
     var delDia = registros.filter(function(r){ return r.tipo==="REAL" && r.fecha===hoy; });
+    var res = $("#listaResumen");
     if(delDia.length===0){
       cont.innerHTML = '<div class="vacio">Todavía no hay mediciones registradas hoy.</div>';
+      if(res) res.textContent = "";
       return;
+    }
+    if(res){
+      var pend = delDia.filter(function(r){ return r.sync==="pendiente"; }).length;
+      res.textContent = delDia.length + (delDia.length===1?" medición":" mediciones") +
+        " · " + (pend===0 ? "todas enviadas" : pend+" pendiente"+(pend===1?"":"s"));
     }
     cont.innerHTML = "";
     delDia.forEach(function(r){
@@ -981,6 +1111,22 @@
       cont.appendChild(fila);
     });
   }
+
+  function pintarSwitches(){
+    Array.prototype.forEach.call(document.querySelectorAll("[data-sw]"), function(b){
+      var activo = config[b.getAttribute("data-sw")] === true;
+      b.classList.toggle("active", (b.getAttribute("data-val")==="1") === activo);
+    });
+  }
+  Array.prototype.forEach.call(document.querySelectorAll("[data-sw]"), function(b){
+    b.addEventListener("click", function(){
+      config[b.getAttribute("data-sw")] = (b.getAttribute("data-val")==="1");
+      guardar(LS.config, config);
+      pintarSwitches();
+      if(config.sonido && b.getAttribute("data-sw")==="sonido" && b.getAttribute("data-val")==="1") beepDoble();
+      if(config.vibracion && b.getAttribute("data-sw")==="vibracion" && b.getAttribute("data-val")==="1") vibrarCorto();
+    });
+  });
 
   function refrescarContadorInfo(){
     var n = cargar("eco_cont_"+currentUser, 0);
@@ -1097,7 +1243,9 @@
     muestraNum.textContent = String(muestra+1);
     updateLed();
 
-    intentarEnviar(registro).then(function(ok){ if(ok) marcarSincronizado(registro.id); });
+    intentarEnviar(registro).then(function(ok){
+      if(ok){ marcarSincronizado(registro.id); avisarExito(); }
+    });
 
     registrarBtn.classList.remove("sending"); registrarBtn.classList.add("done");
     setTimeout(function(){
@@ -1116,6 +1264,7 @@
 
   registrarBtn.addEventListener("click", function(){
     if(registrarBtn.classList.contains("sending")) return;
+    normalizarTodos();
     var r=evaluar();
     if(r.fueraDeLimite.length>0){ mostrarBloqueoLimite(r.fueraDeLimite); return; }
     if(!r.ok){ mostrarFaltanDatos(); return; }
