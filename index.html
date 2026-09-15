@@ -17,7 +17,22 @@
     src:url('https://cdn.jsdelivr.net/npm/dseg@0.46.0/fonts/DSEG7-Classic/DSEG7Classic-Bold.woff2') format('woff2');
     font-weight:bold; font-style:normal; font-display:swap;
   }
+  /* ===================================================================
+     AJUSTES DE ESPACIADO — cambia SOLO estos valores para subir o bajar
+     los controles. Si el boton "Registrar" queda tapado por el teclado,
+     reduce --alto-caja o --sep-cajas. Si las cajas del GPS se ven muy
+     apretadas, sube --pad-gps o --sep-gps.
+     =================================================================== */
   :root{
+    --alto-appbar: 48px;   /* alto de la barra azul superior            */
+    --alto-caja:   54px;   /* alto de las cajas pH / TDS / Temp         */
+    --sep-cajas:    9px;   /* separacion vertical entre esas 3 cajas    */
+    --pad-gps:      7px;   /* alto interno de las cajas Lat / Lon       */
+    --sep-gps:      7px;   /* separacion entre la fila Lat y la Lon     */
+    --margen-gps:  12px;   /* aire arriba y abajo del bloque GPS        */
+    --alto-cta:    52px;   /* alto del boton Registrar                  */
+    --pad-inf-cta: 10px;   /* aire debajo del boton Registrar           */
+
     --navy:#16234A; --navy-dark:#0F1935; --navy-hi:#223868;
     --brass:#B9852E; --brass-bg:#F3E7CE;
     --ok:#1F6E4A; --danger:#A33B2E;
@@ -86,7 +101,7 @@
 
   /* ---------- shell ---------- */
   #viewShell{ background:var(--paper); }
-  .appbar{ flex:0 0 auto; height:48px; background:linear-gradient(180deg,var(--navy-hi),var(--navy)); color:#fff;
+  .appbar{ flex:0 0 auto; height:var(--alto-appbar); background:linear-gradient(180deg,var(--navy-hi),var(--navy)); color:#fff;
     display:flex; align-items:center; justify-content:space-between; padding:0 8px 0 6px; box-shadow:0 2px 6px rgba(11,18,32,.25); }
   .icon-btn{ width:40px; height:40px; border:none; background:transparent; color:#fff; display:flex; align-items:center;
     justify-content:center; cursor:pointer; border-radius:50%; }
@@ -110,10 +125,10 @@
     border:1.5px solid var(--disp-border); display:flex; align-items:center; gap:6px; font-size:11px; color:var(--ink-faint); font-weight:600; white-space:nowrap; }
   .muestra-badge .digital{ font-size:17px; }
 
-  .metrics{ flex:0 0 auto; display:flex; flex-direction:column; gap:9px; }
+  .metrics{ flex:0 0 auto; display:flex; flex-direction:column; gap:var(--sep-cajas); }
   .metric-row{ display:flex; align-items:center; gap:12px; }
   .metric-label{ flex:0 0 50px; font-size:13.5px; color:var(--ink-soft); font-weight:600; }
-  .metric-cell{ position:relative; flex:1 1 auto; height:54px; }
+  .metric-cell{ position:relative; flex:1 1 auto; height:var(--alto-caja); }
   .metric-real{
     width:100%; height:100%; border:2.5px solid var(--disp-border); border-radius:14px; margin:0;
     padding:0 14px; font-size:30px; text-align:right; background:linear-gradient(180deg,var(--disp2),var(--disp1));
@@ -124,16 +139,16 @@
   .metric-real.warn{ border-color:var(--brass); }
   .metric-unit{ flex:0 0 32px; font-size:13px; color:var(--ink-faint); font-weight:600; }
 
-  .gps-block{ flex:0 0 auto; display:flex; flex-direction:column; gap:5px; margin:11px 0 11px; }
+  .gps-block{ flex:0 0 auto; display:flex; flex-direction:column; gap:var(--sep-gps); margin:var(--margen-gps) 0; }
   .gps-row{ display:flex; align-items:center; gap:12px; }
   .gps-tag{ flex:0 0 auto; font-size:12.5px; color:var(--ink-soft); font-weight:600; width:34px; }
   .gps-display{ flex:1 1 auto; width:0; text-align:right; background:linear-gradient(180deg,var(--disp2),var(--disp1));
-    border:1.5px solid var(--disp-border); border-radius:10px; padding:5px 14px;
+    border:1.5px solid var(--disp-border); border-radius:10px; padding:var(--pad-gps) 14px;
     box-shadow:inset 0 2px 6px rgba(0,0,0,.2); overflow:hidden; }
   .gps-display .digital{ font-size:20px; letter-spacing:0.02em; }
 
-  .cta-wrap{ flex:0 0 auto; padding:0 0 10px; }
-  .cta{ position:relative; width:100%; height:52px; background:linear-gradient(180deg,var(--navy-hi),var(--navy)); color:#fff; border:none;
+  .cta-wrap{ flex:0 0 auto; padding:0 0 var(--pad-inf-cta); }
+  .cta{ position:relative; width:100%; height:var(--alto-cta); background:linear-gradient(180deg,var(--navy-hi),var(--navy)); color:#fff; border:none;
     border-radius:16px; font-family:inherit; font-size:16px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center;
     box-shadow:0 5px 12px rgba(15,25,53,.3), inset 0 1px 0 rgba(255,255,255,.1); }
   .cta:active{ background:var(--navy-dark); }
@@ -337,6 +352,10 @@
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7.5" stroke="currentColor" stroke-width="1.5"/><path d="M10 9v5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="10" cy="6.3" r="1" fill="currentColor"/></svg>
         Instrucciones
       </button>
+      <button class="menu-item danger" id="goBorrar">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 6h12M8 6V4h4v2M6 6l.7 10h6.6L14 6M8.5 9v4M11.5 9v4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Eliminar último registro
+      </button>
       <button class="menu-item danger" id="doLogout">
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M8 17H4.5a1 1 0 01-1-1V4a1 1 0 011-1H8M13 14l4-4-4-4M17 10H7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
         Cerrar sesión
@@ -365,6 +384,12 @@
         <input class="cfg-field" id="cfgUrl" value="">
         <button class="login-btn" id="testBtn" style="margin-top:4px;">Probar conexión</button>
         <div class="cfg-hard" id="testResult" style="margin-top:10px;"></div>
+      </div>
+      <div class="cfg-section">
+        <div class="cfg-label">Numeración de registros</div>
+        <div class="cfg-hard" id="contadorInfo"></div>
+        <button class="login-btn" id="resetContadorBtn" style="background:#A33B2E;">Reiniciar numeración a 0001</button>
+        <div class="cfg-hard" style="margin-top:8px;">Úsalo solo si también vaciaste la hoja de cálculo. Si no, los registros nuevos chocarán con los que ya están guardados.</div>
       </div>
       <div class="cfg-section">
         <div class="cfg-label">Rango esperado — pH</div>
@@ -841,7 +866,64 @@
   menuBack.addEventListener("click", function(){ showView("viewShell"); });
   $("#goGraficos").addEventListener("click", function(){ mostrarTab("tabGraficos"); showView("viewShell"); });
   $("#goRegistrar").addEventListener("click", function(){ mostrarTab("tabRegistrar"); showView("viewShell"); });
-  goConfig.addEventListener("click", function(){ showView("viewConfig"); });
+  goConfig.addEventListener("click", function(){ refrescarContadorInfo(); showView("viewConfig"); });
+
+  // ---- Eliminar el ultimo registro (solo el ultimo, y se borra completo) ----
+  $("#goBorrar").addEventListener("click", function(){
+    var mios = registros.filter(function(r){ return r.tipo==="REAL"; });
+    if(mios.length===0){
+      warnTitle.textContent = "No hay registros";
+      warnMsg.innerHTML = "Todavía no has registrado ninguna medición en este celular.";
+      warnActionsConfirm.hidden = true; warnActionsOk.hidden = false;
+      warnModal.classList.add("show");
+      return;
+    }
+    var ult = mios[mios.length-1];
+    warnTitle.textContent = "Eliminar registro";
+    warnMsg.innerHTML =
+      "<b>" + ult.id + "</b><br>" +
+      ult.puntoNombre + " · muestra " + ult.muestra + "<br>" +
+      ult.fecha + " " + ult.hora + "<br><br>" +
+      "pH <b>" + ult.ph + "</b> &nbsp; TDS <b>" + ult.tds + "</b> ppm &nbsp; Temp <b>" + ult.temp + "</b> °C" +
+      "<br><br>¿Eliminar este registro por completo?";
+    warnActionsConfirm.hidden = false; warnActionsOk.hidden = true;
+    warnYes.textContent = "Sí, eliminar";
+    pendingConfirm = function(){ ejecutarBorrado(ult); };
+    warnModal.classList.add("show");
+  });
+
+  function ejecutarBorrado(reg){
+    // 1) pedir al servidor que quite la fila (libera el numero)
+    var params = new URLSearchParams({ key:"ECOSWITCH2026", accion:"borrar", id:reg.id });
+    fetch(config.backendUrl+"?"+params.toString()).catch(function(){
+      return fetch(config.backendUrl+"?"+params.toString(), {mode:"no-cors"}).catch(function(){});
+    });
+    // 2) quitarlo del celular
+    registros = registros.filter(function(r){ return r.id !== reg.id; });
+    guardar(LS.registros, registros);
+    // 3) devolver el contador de muestra de ese punto
+    if(muestraPorPunto[reg.puntoNum]){
+      muestraPorPunto[reg.puntoNum] = Math.max(0, muestraPorPunto[reg.puntoNum]-1);
+      guardar(LS.muestraPorPunto, muestraPorPunto);
+    }
+    // 4) devolver el contador del measurement_id para reutilizar el mismo numero
+    var claveCont = "eco_cont_" + currentUser;
+    var n = cargar(claveCont, 0);
+    if(n>0) guardar(claveCont, n-1);
+
+    renderPuntoSelect(); updateLed(); drawChart();
+    warnYes.textContent = "Sí, registrar";
+    showView("viewShell");
+  }
+
+  function refrescarContadorInfo(){
+    var n = cargar("eco_cont_"+currentUser, 0);
+    $("#contadorInfo").textContent = "Usuario «"+(currentUser||"—")+"»: siguiente registro será el número "+("0000"+(n+1)).slice(-4)+".";
+  }
+  $("#resetContadorBtn").addEventListener("click", function(){
+    guardar("eco_cont_"+currentUser, 0);
+    refrescarContadorInfo();
+  });
 
   $("#testBtn").addEventListener("click", function(){
     var out = $("#testResult");
@@ -906,7 +988,7 @@
     warnActionsConfirm.hidden = true; warnActionsOk.hidden = false;
     warnModal.classList.add("show");
   }
-  warnNo.addEventListener("click", function(){ warnModal.classList.remove("show"); pendingConfirm=null; });
+  warnNo.addEventListener("click", function(){ warnModal.classList.remove("show"); pendingConfirm=null; warnYes.textContent="Sí, registrar"; });
   warnOk.addEventListener("click", function(){ warnModal.classList.remove("show"); });
   warnModal.addEventListener("click", function(e){ if(e.target===warnModal){ warnModal.classList.remove("show"); pendingConfirm=null; } });
   warnYes.addEventListener("click", function(){ warnModal.classList.remove("show"); var fn=pendingConfirm; pendingConfirm=null; if(fn) fn(); });
