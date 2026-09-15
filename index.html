@@ -26,7 +26,7 @@
   [data-theme="light"]{
     --paper:#F7F8FA; --ink:#12203D; --ink-soft:#54607A; --ink-faint:#98A1B8;
     --field-bg:#EDF0F6; --line:#DFE3EC;
-    --disp1:#DCE2EE; --disp2:#EAEEF6; --disp-border:#B9C2D6;
+    --disp1:#D9D7CB; --disp2:#E4E2D8; --disp-border:#B0AEA2;
     --seg-on:#1B2A52; --seg-off:rgba(27,42,82,0.14);
     --seg-glow-a:rgba(27,42,82,0); --seg-glow-b:rgba(27,42,82,0);
   }
@@ -44,9 +44,6 @@
   .device{ position:relative; width:390px; height:844px; max-width:100vw; max-height:100vh;
     background:var(--paper); border-radius:38px; overflow:hidden; display:flex; flex-direction:column; }
 
-  .statusbar{ flex:0 0 auto; height:30px; background:var(--navy-dark); color:#EAF0FA;
-    display:flex; align-items:center; justify-content:space-between; padding:0 20px; font-size:12.5px; font-weight:600; font-variant-numeric:tabular-nums; }
-  .statusbar .icons{ display:flex; align-items:center; gap:6px; }
 
   .view{ flex:1 1 auto; display:none; flex-direction:column; min-height:0; }
   .view.active{ display:flex; }
@@ -95,8 +92,12 @@
     justify-content:center; cursor:pointer; border-radius:50%; }
   .icon-btn:active{ background:rgba(255,255,255,.14); }
   .appbar .mark{ font-family:Georgia,"Times New Roman",serif; font-size:18px; }
-  .led{ width:10px; height:10px; border-radius:50%; background:var(--ok); margin-right:8px; flex:0 0 auto; box-shadow:0 0 6px rgba(31,110,74,.8); }
-  .led.pending{ background:var(--brass); box-shadow:0 0 6px rgba(185,133,46,.85); }
+  .led{ width:16px; height:16px; border-radius:50%; background:var(--ok); margin-right:10px; flex:0 0 auto;
+    box-shadow:0 0 9px rgba(31,110,74,.95), inset 0 -2px 4px rgba(0,0,0,.25); transition:background .2s; }
+  .led.pending{ background:var(--brass); box-shadow:0 0 9px rgba(185,133,46,1), inset 0 -2px 4px rgba(0,0,0,.25); }
+  .led.sending{ background:#E03A2F; box-shadow:0 0 12px rgba(224,58,47,1), inset 0 -2px 4px rgba(0,0,0,.25);
+    animation:blink .5s steps(1,end) infinite; }
+  @keyframes blink{ 0%,49%{opacity:1;} 50%,100%{opacity:.22;} }
 
   .tabcontent{ flex:1 1 auto; min-height:0; display:none; flex-direction:column; }
   .tabcontent.active{ display:flex; }
@@ -124,12 +125,12 @@
   .metric-unit{ flex:0 0 32px; font-size:13px; color:var(--ink-faint); font-weight:600; }
 
   .gps-row{ flex:0 0 auto; display:flex; align-items:center; gap:12px; margin:2px 0 10px; }
-  .gps-label{ flex:0 0 50px; font-size:11px; color:var(--ink-soft); font-weight:600; }
+  .gps-label{ flex:0 0 50px; font-size:12.5px; color:var(--ink-soft); font-weight:600; }
   .gps-display{ flex:1 1 auto; background:linear-gradient(180deg,var(--disp2),var(--disp1)); border:1.5px solid var(--disp-border);
     border-radius:10px; padding:9px 12px; box-shadow:inset 0 2px 6px rgba(0,0,0,.2); overflow:hidden; }
-  .gps-display .digital{ font-size:14px; letter-spacing:0.02em; }
+  .gps-display .digital{ font-size:19px; letter-spacing:0.02em; }
 
-  .cta-wrap{ flex:0 0 auto; padding:10px 0 16px; }
+  .cta-wrap{ flex:0 0 auto; padding:10px 0 14px; }
   .cta{ position:relative; width:100%; height:56px; background:linear-gradient(180deg,var(--navy-hi),var(--navy)); color:#fff; border:none;
     border-radius:16px; font-family:inherit; font-size:16px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center;
     box-shadow:0 5px 12px rgba(15,25,53,.3), inset 0 1px 0 rgba(255,255,255,.1); }
@@ -148,12 +149,9 @@
   .graf-legend span{ font-size:11px; color:var(--ink-soft); display:flex; align-items:center; gap:5px; }
   .dot{ width:8px; height:8px; border-radius:50%; }
 
-  .bottomnav{ flex:0 0 auto; height:60px; display:flex; border-top:1px solid var(--line); background:var(--paper); }
-  .bottomnav button{ flex:1; border:none; background:transparent; display:flex; flex-direction:column; align-items:center;
-    justify-content:center; gap:3px; color:var(--ink-faint); font-family:inherit; font-size:10.5px; font-weight:600; cursor:pointer; }
-  .bottomnav button.active{ color:var(--navy); }
-  .bottomnav svg{ width:20px; height:20px; }
 
+  .banner-wrap{ flex:0 1 auto; min-height:0; overflow:hidden; margin:0 -22px; display:flex; align-items:flex-end; }
+  .banner-img{ width:100%; display:block; object-fit:cover; }
   .homebar{ position:absolute; bottom:8px; left:50%; transform:translateX(-50%); width:120px; height:4px; border-radius:3px; background:var(--ink); opacity:.28; }
 
   /* ---------- modal de confirmacion (valor fuera de rango esperado) ---------- */
@@ -218,14 +216,6 @@
 <body>
 
 <div class="device">
-  <div class="statusbar">
-    <span id="clock">9:41</span>
-    <span class="icons">
-      <svg width="16" height="11" viewBox="0 0 16 11"><rect x="0" y="7" width="3" height="4" rx="0.5" fill="#EAF0FA"/><rect x="4.5" y="5" width="3" height="6" rx="0.5" fill="#EAF0FA"/><rect x="9" y="3" width="3" height="8" rx="0.5" fill="#EAF0FA"/><rect x="13" y="0" width="3" height="11" rx="0.5" fill="#EAF0FA"/></svg>
-      <svg width="15" height="11" viewBox="0 0 15 11"><path d="M7.5 9.5C8.05 9.5 8.5 9.05 8.5 8.5C8.5 7.95 8.05 7.5 7.5 7.5C6.95 7.5 6.5 7.95 6.5 8.5C6.5 9.05 6.95 9.5 7.5 9.5Z" fill="#EAF0FA"/><path d="M4.8 6.3C5.5 5.6 6.45 5.2 7.5 5.2C8.55 5.2 9.5 5.6 10.2 6.3" stroke="#EAF0FA" stroke-width="1.3" stroke-linecap="round"/><path d="M2.3 3.9C3.7 2.5 5.5 1.7 7.5 1.7C9.5 1.7 11.3 2.5 12.7 3.9" stroke="#EAF0FA" stroke-width="1.3" stroke-linecap="round"/></svg>
-      <svg width="24" height="12" viewBox="0 0 24 12"><rect x="0.75" y="0.75" width="20.5" height="10.5" rx="2.5" stroke="#EAF0FA" stroke-width="1.2"/><rect x="2.5" y="2.5" width="15" height="7" rx="1" fill="#EAF0FA"/><rect x="22" y="4" width="1.6" height="4" rx="0.8" fill="#EAF0FA"/></svg>
-    </span>
-  </div>
 
   <!-- LOGIN -->
   <div class="view active" id="viewLogin">
@@ -258,7 +248,6 @@
   </div>
 
   <!-- SHELL -->
-
   <div class="view" id="viewShell">
     <div class="appbar">
       <button class="icon-btn" id="btnMenu" aria-label="Menú">
@@ -299,6 +288,7 @@
           <span class="cta-label">Registrar</span><span class="cta-spinner"></span><span class="cta-check">&#10003;</span>
         </button>
       </div>
+      <div class="banner-wrap"><img src="banner.jpg" alt="ECOSWITCH" class="banner-img"></div>
     </div>
 
     <div class="tabcontent" id="tabGraficos">
@@ -313,20 +303,20 @@
       </div>
     </div>
 
-    <div class="bottomnav">
-      <button class="tab-btn active" data-tab="tabRegistrar">
-        <svg viewBox="0 0 24 24" fill="none"><path d="M4 20h16M6 16.5V20h3.5L19 10.5l-3.5-3.5L6 16.5z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>Registrar
-      </button>
-      <button class="tab-btn" data-tab="tabGraficos">
-        <svg viewBox="0 0 24 24" fill="none"><path d="M4 20V10M11 20V4M18 20v-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>Gráficos
-      </button>
-    </div>
   </div>
 
   <!-- MENU -->
   <div class="view subview" id="viewMenu">
     <div class="subbar"><button class="icon-btn" id="menuBack"><svg width="20" height="20" viewBox="0 0 20 20"><path d="M12.5 4l-6 6 6 6" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button><span class="title">Menú</span></div>
     <div class="subbody" style="padding-top:6px;">
+      <button class="menu-item" id="goGraficos">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 20V10M11 20V4M18 20v-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        Gráficos
+      </button>
+      <button class="menu-item" id="goRegistrar">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 20h16M6 16.5V20h3.5L19 10.5l-3.5-3.5L6 16.5z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+        Registrar mediciones
+      </button>
       <button class="menu-item" id="goConfig">
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="2.6" stroke="currentColor" stroke-width="1.5"/><path d="M10 2.5v2M10 15.5v2M17.5 10h-2M4.5 10h-2M15.4 4.6l-1.4 1.4M6 12.6l-1.4 1.4M15.4 15.4l-1.4-1.4M6 7.4L4.6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
         Configuración
@@ -489,7 +479,7 @@
   var loginUser=$("#loginUser"), loginPass=$("#loginPass"), loginPass2=$("#loginPass2"), loginBtn=$("#loginBtn");
   var loginHint=$("#loginHint"), loginError=$("#loginError");
   var gpsWaitTitle=$("#gpsWaitTitle"), gpsWaitMsg=$("#gpsWaitMsg"), gpsSkipBtn=$("#gpsSkipBtn");
-  var clock=$("#clock");
+
   var puntoSel=$("#punto"), muestraNum=$("#muestraNum");
   var phEl=$("#ph"), tdsEl=$("#tds"), tempEl=$("#temp"), gpsDisplay=$("#gpsDisplay");
   var registrarBtn=$("#registrarBtn"), led=$("#led");
@@ -508,7 +498,7 @@
   var HARD={ph:[0,16], tds:[0,9990], temp:[-50,300]};
 
   function pad(n){ return String(n).length<2 ? "0"+n : String(n); }
-  (function(){ var d=new Date(); clock.textContent = d.getHours()+":"+pad(d.getMinutes()); })();
+  
 
   function fechaHoy(){ var d=new Date(); return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()); }
   function horaAhora(){ var d=new Date(); return pad(d.getHours())+":"+pad(d.getMinutes()); }
@@ -626,7 +616,20 @@
 
   /* ================= LED de estado ================= */
   function hayPendientes(){ return registros.some(function(r){ return r.sync==="pendiente"; }); }
-  function updateLed(){ led.classList.toggle("pending", hayPendientes()); }
+  var ledSendingTimer=null;
+  function updateLed(){
+    if(led.classList.contains("sending")) return;   // el rojo manda mientras dura
+    led.classList.toggle("pending", hayPendientes());
+  }
+  function ledEnviando(){
+    led.classList.remove("pending");
+    led.classList.add("sending");
+    clearTimeout(ledSendingTimer);
+    ledSendingTimer = setTimeout(function(){
+      led.classList.remove("sending");
+      updateLed();
+    }, 3000);
+  }
 
   /* ================= grafico local (a partir de mediciones reales de este celular) ================= */
   function drawChart(){
@@ -783,10 +786,19 @@
       punto_num:r.puntoNum, punto_nombre:r.puntoNombre, muestra:r.muestra,
       ph:r.ph, tds:r.tds, temp:r.temp, operador:r.operador, tipo:r.tipo
     });
-    return fetch(config.backendUrl+"?"+params.toString())
+    var url = config.backendUrl+"?"+params.toString();
+    return fetch(url)
       .then(function(resp){ return resp.json(); })
       .then(function(data){ return !!data.ok; })
-      .catch(function(){ return false; });
+      .catch(function(){
+        // El navegador puede impedir LEER la respuesta de Apps Script (politica
+        // CORS) aunque el envio si haya llegado al servidor. Se reintenta en modo
+        // no-cors: si esa peticion se completa, el dato llego; simplemente no
+        // podemos leer la confirmacion. Los duplicados los evita measurement_id.
+        return fetch(url, {mode:"no-cors"})
+          .then(function(){ return true; })
+          .catch(function(){ return false; });
+      });
   }
   function marcarSincronizado(id){
     registros = registros.map(function(r){ return r.id===id ? Object.assign({},r,{sync:"sincronizado"}) : r; });
@@ -801,17 +813,15 @@
   window.addEventListener("online", reintentarPendientes);
 
   /* ================= sesion (login = identificador de operador, sin contraseña real) ================= */
-  Array.prototype.forEach.call(document.querySelectorAll(".tab-btn"), function(btn){
-    btn.addEventListener("click", function(){
-      var target=btn.getAttribute("data-tab");
-      Array.prototype.forEach.call(document.querySelectorAll(".tab-btn"), function(b){ b.classList.toggle("active", b===btn); });
-      Array.prototype.forEach.call(document.querySelectorAll(".tabcontent"), function(tc){ tc.classList.toggle("active", tc.id===target); });
-      if(target==="tabGraficos") drawChart();
-    });
-  });
+  function mostrarTab(id){
+    Array.prototype.forEach.call(document.querySelectorAll(".tabcontent"), function(tc){ tc.classList.toggle("active", tc.id===id); });
+    if(id==="tabGraficos") drawChart();
+  }
 
   btnMenu.addEventListener("click", function(){ showView("viewMenu"); });
   menuBack.addEventListener("click", function(){ showView("viewShell"); });
+  $("#goGraficos").addEventListener("click", function(){ mostrarTab("tabGraficos"); showView("viewShell"); });
+  $("#goRegistrar").addEventListener("click", function(){ mostrarTab("tabRegistrar"); showView("viewShell"); });
   goConfig.addEventListener("click", function(){ showView("viewConfig"); });
   goInstr.addEventListener("click", function(){ showView("viewInstr"); });
   configBack.addEventListener("click", function(){ showView("viewMenu"); });
@@ -893,6 +903,7 @@
     };
 
     registros.push(registro); guardar(LS.registros, registros);
+    ledEnviando();
     muestraPorPunto[punto.num]=muestra; guardar(LS.muestraPorPunto, muestraPorPunto);
     muestraNum.textContent = String(muestra+1);
     updateLed();

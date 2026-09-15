@@ -6,14 +6,15 @@
   sobre la fuente y el modo avión.
 */
 
-const CACHE_NAME = "ecoswitch-cache-v4";
+const CACHE_NAME = "ecoswitch-cache-v5";
 
 const APP_SHELL = [
   "./",
   "./index.html",
   "./manifest.json",
   "./icon-192.png",
-  "./icon-512.png"
+  "./icon-512.png",
+  "./banner.jpg"
 ];
 
 const FUENTE_DSEG7 =
