@@ -110,7 +110,7 @@
     border:1.5px solid var(--disp-border); display:flex; align-items:center; gap:6px; font-size:11px; color:var(--ink-faint); font-weight:600; white-space:nowrap; }
   .muestra-badge .digital{ font-size:17px; }
 
-  .metrics{ flex:1 1 auto; display:flex; flex-direction:column; justify-content:center; gap:12px; min-height:0; }
+  .metrics{ flex:0 0 auto; display:flex; flex-direction:column; gap:12px; }
   .metric-row{ display:flex; align-items:center; gap:12px; }
   .metric-label{ flex:0 0 50px; font-size:13.5px; color:var(--ink-soft); font-weight:600; }
   .metric-cell{ position:relative; flex:1 1 auto; height:60px; }
@@ -124,11 +124,13 @@
   .metric-real.warn{ border-color:var(--brass); }
   .metric-unit{ flex:0 0 32px; font-size:13px; color:var(--ink-faint); font-weight:600; }
 
-  .gps-row{ flex:0 0 auto; display:flex; align-items:center; gap:12px; margin:2px 0 10px; }
-  .gps-label{ flex:0 0 50px; font-size:12.5px; color:var(--ink-soft); font-weight:600; }
-  .gps-display{ flex:1 1 auto; background:linear-gradient(180deg,var(--disp2),var(--disp1)); border:1.5px solid var(--disp-border);
-    border-radius:10px; padding:9px 12px; box-shadow:inset 0 2px 6px rgba(0,0,0,.2); overflow:hidden; }
-  .gps-display .digital{ font-size:19px; letter-spacing:0.02em; }
+  .gps-block{ flex:0 0 auto; display:flex; flex-direction:column; gap:7px; margin:16px 0 16px; }
+  .gps-row{ display:flex; align-items:center; gap:12px; }
+  .gps-tag{ flex:0 0 auto; font-size:12.5px; color:var(--ink-soft); font-weight:600; width:34px; }
+  .gps-display{ flex:1 1 auto; width:0; text-align:right; background:linear-gradient(180deg,var(--disp2),var(--disp1));
+    border:1.5px solid var(--disp-border); border-radius:10px; padding:7px 14px;
+    box-shadow:inset 0 2px 6px rgba(0,0,0,.2); overflow:hidden; }
+  .gps-display .digital{ font-size:20px; letter-spacing:0.02em; }
 
   .cta-wrap{ flex:0 0 auto; padding:10px 0 14px; }
   .cta{ position:relative; width:100%; height:56px; background:linear-gradient(180deg,var(--navy-hi),var(--navy)); color:#fff; border:none;
@@ -150,7 +152,7 @@
   .dot{ width:8px; height:8px; border-radius:50%; }
 
 
-  .banner-wrap{ flex:0 1 auto; min-height:0; overflow:hidden; margin:0 -22px; display:flex; align-items:flex-end; }
+  .banner-wrap{ flex:1 1 auto; min-height:0; overflow:hidden; margin:0 -22px; display:flex; align-items:flex-end; }
   .banner-img{ width:100%; display:block; object-fit:cover; }
   .homebar{ position:absolute; bottom:8px; left:50%; transform:translateX(-50%); width:120px; height:4px; border-radius:3px; background:var(--ink); opacity:.28; }
 
@@ -279,9 +281,19 @@
           <div class="metric-unit">°C</div>
         </div>
       </div>
-      <div class="gps-row">
-        <div class="gps-label">GPS</div>
-        <div class="gps-display"><span id="gpsDisplay" class="digital">— · —</span></div>
+      <div class="gps-block">
+        <div class="gps-row">
+          <div class="metric-label">GPS</div>
+          <div class="gps-tag">Lat:</div>
+          <div class="gps-display"><span id="gpsLat" class="digital">—</span></div>
+          <div class="metric-unit"></div>
+        </div>
+        <div class="gps-row">
+          <div class="metric-label"></div>
+          <div class="gps-tag">Lon:</div>
+          <div class="gps-display"><span id="gpsLon" class="digital">—</span></div>
+          <div class="metric-unit"></div>
+        </div>
       </div>
       <div class="cta-wrap">
         <button class="cta" id="registrarBtn">
@@ -351,6 +363,8 @@
       <div class="cfg-section">
         <div class="cfg-label">URL del backend (Apps Script)</div>
         <input class="cfg-field" id="cfgUrl" value="">
+        <button class="login-btn" id="testBtn" style="margin-top:4px;">Probar conexión</button>
+        <div class="cfg-hard" id="testResult" style="margin-top:10px;"></div>
       </div>
       <div class="cfg-section">
         <div class="cfg-label">Rango esperado — pH</div>
@@ -481,7 +495,7 @@
   var gpsWaitTitle=$("#gpsWaitTitle"), gpsWaitMsg=$("#gpsWaitMsg"), gpsSkipBtn=$("#gpsSkipBtn");
 
   var puntoSel=$("#punto"), muestraNum=$("#muestraNum");
-  var phEl=$("#ph"), tdsEl=$("#tds"), tempEl=$("#temp"), gpsDisplay=$("#gpsDisplay");
+  var phEl=$("#ph"), tdsEl=$("#tds"), tempEl=$("#temp"), gpsLat=$("#gpsLat"), gpsLon=$("#gpsLon");
   var registrarBtn=$("#registrarBtn"), led=$("#led");
   var btnMenu=$("#btnMenu"), menuBack=$("#menuBack"), goConfig=$("#goConfig"), goInstr=$("#goInstr"), doLogout=$("#doLogout");
   var configBack=$("#configBack"), instrBack=$("#instrBack");
@@ -492,6 +506,7 @@
       cfgTdsMax=$("#cfgTdsMax"), cfgTempMin=$("#cfgTempMin"), cfgTempMax=$("#cfgTempMax");
 
   var isDemo=false, currentUser="";
+  var ultimoDiagnostico = "(sin intentos todavia)";
   var pendingConfirm=null;
   var ubicacionActual={lat:null,lon:null,precision:null};   // capturada al entrar y refrescada tras cada registro
   var usuarios = cargar(LS.usuarios, {});                    // { nick: {pass:"..."} } — solo en este celular
@@ -670,9 +685,10 @@
 
   function mostrarUbicacionEnPantalla(){
     if(ubicacionActual.lat!=null){
-      gpsDisplay.textContent = ubicacionActual.lat.toFixed(6)+" · "+ubicacionActual.lon.toFixed(6);
+      gpsLat.textContent = ubicacionActual.lat.toFixed(6);
+      gpsLon.textContent = ubicacionActual.lon.toFixed(6);
     } else {
-      gpsDisplay.textContent = "— · —";
+      gpsLat.textContent = "—"; gpsLon.textContent = "—";
     }
   }
 
@@ -787,17 +803,20 @@
       ph:r.ph, tds:r.tds, temp:r.temp, operador:r.operador, tipo:r.tipo
     });
     var url = config.backendUrl+"?"+params.toString();
-    return fetch(url)
+    ultimoDiagnostico = "enviando...";
+    return fetch(url, {redirect:"follow"})
       .then(function(resp){ return resp.json(); })
-      .then(function(data){ return !!data.ok; })
-      .catch(function(){
-        // El navegador puede impedir LEER la respuesta de Apps Script (politica
-        // CORS) aunque el envio si haya llegado al servidor. Se reintenta en modo
-        // no-cors: si esa peticion se completa, el dato llego; simplemente no
-        // podemos leer la confirmacion. Los duplicados los evita measurement_id.
+      .then(function(data){
+        ultimoDiagnostico = data.ok ? "OK (respuesta leida)" : ("Servidor respondio error: "+(data.error||"?"));
+        return !!data.ok;
+      })
+      .catch(function(e1){
+        // No se pudo LEER la respuesta (tipico por politica CORS de Apps Script).
+        // Se reintenta en modo no-cors: si esa peticion se completa, el dato llego
+        // al servidor aunque no podamos leer la confirmacion.
         return fetch(url, {mode:"no-cors"})
-          .then(function(){ return true; })
-          .catch(function(){ return false; });
+          .then(function(){ ultimoDiagnostico = "Enviado (sin lectura de respuesta: "+e1.message+")"; return true; })
+          .catch(function(e2){ ultimoDiagnostico = "FALLO total: "+e2.message; return false; });
       });
   }
   function marcarSincronizado(id){
@@ -823,6 +842,22 @@
   $("#goGraficos").addEventListener("click", function(){ mostrarTab("tabGraficos"); showView("viewShell"); });
   $("#goRegistrar").addEventListener("click", function(){ mostrarTab("tabRegistrar"); showView("viewShell"); });
   goConfig.addEventListener("click", function(){ showView("viewConfig"); });
+
+  $("#testBtn").addEventListener("click", function(){
+    var out = $("#testResult");
+    out.textContent = "Probando...";
+    var prueba = {
+      id:"M-TEST-"+Date.now().toString(36), fecha:fechaHoy(), hora:horaAhora(),
+      lat:null, lon:null, precision:null, puntoNum:0, puntoNombre:"PRUEBA_CONEXION",
+      muestra:0, ph:"7.00", tds:"100", temp:"15.0", operador:currentUser||"test", tipo:"PRUEBA"
+    };
+    intentarEnviar(prueba).then(function(ok){
+      out.textContent = (ok ? "✓ " : "✗ ") + ultimoDiagnostico +
+        "\n\nURL usada:\n" + config.backendUrl;
+      out.style.whiteSpace = "pre-wrap";
+      out.style.color = ok ? "#1F6E4A" : "#A33B2E";
+    });
+  });
   goInstr.addEventListener("click", function(){ showView("viewInstr"); });
   configBack.addEventListener("click", function(){ showView("viewMenu"); });
   instrBack.addEventListener("click", function(){ showView("viewMenu"); });
@@ -854,6 +889,12 @@
     warnTitle.textContent = "Valor fuera de lo esperado";
     warnMsg.innerHTML = lineas + "<br><br>¿Registrar de todas formas?";
     warnActionsConfirm.hidden = false; warnActionsOk.hidden = true;
+    warnModal.classList.add("show");
+  }
+  function mostrarFaltanDatos(){
+    warnTitle.textContent = "Faltan datos por llenar";
+    warnMsg.innerHTML = "Completa las tres casillas (pH, TDS y Temperatura) antes de registrar.";
+    warnActionsConfirm.hidden = true; warnActionsOk.hidden = false;
     warnModal.classList.add("show");
   }
   function mostrarBloqueoLimite(items){
@@ -929,7 +970,7 @@
     if(registrarBtn.classList.contains("sending")) return;
     var r=evaluar();
     if(r.fueraDeLimite.length>0){ mostrarBloqueoLimite(r.fueraDeLimite); return; }
-    if(!r.ok) return;
+    if(!r.ok){ mostrarFaltanDatos(); return; }
     if(r.fueraDeRango.length>0){ pendingConfirm=procesarRegistro; mostrarAvisoRango(r.fueraDeRango); return; }
     procesarRegistro();
   });

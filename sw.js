@@ -6,7 +6,7 @@
   sobre la fuente y el modo avión.
 */
 
-const CACHE_NAME = "ecoswitch-cache-v5";
+const CACHE_NAME = "ecoswitch-cache-v6";
 
 const APP_SHELL = [
   "./",
@@ -53,17 +53,13 @@ self.addEventListener("activate", function (event) {
 self.addEventListener("fetch", function (event) {
   var url = event.request.url;
 
-  // Las llamadas al backend (Apps Script) siempre van a la red: son envíos
-  // de datos, nunca deben servirse desde una copia en caché.
-  if (url.indexOf("script.google.com") !== -1) {
-    event.respondWith(
-      fetch(event.request).catch(function () {
-        return new Response(
-          JSON.stringify({ ok: false, error: "sin_conexion" }),
-          { headers: { "Content-Type": "application/json" } }
-        );
-      })
-    );
+  // Las llamadas al backend (Apps Script) NO se interceptan en absoluto.
+  // Apps Script responde con una redireccion (302) hacia googleusercontent.com, y
+  // una respuesta redirigida servida por un service worker es rechazada por el
+  // navegador. Al no llamar a respondWith(), la peticion va directo a la red como
+  // si el service worker no existiera, que es justo lo que necesita.
+  if (url.indexOf("script.google.com") !== -1 ||
+      url.indexOf("googleusercontent.com") !== -1) {
     return;
   }
 
