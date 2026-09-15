@@ -39,6 +39,8 @@
     --backdrop:#0B1220;
   }
   [data-theme="light"]{
+    --brand:#16234A;       /* titulo ECOSWITCH del login  */
+    --accent:#16234A;      /* bordes de foco y acentos    */
     --paper:#F7F8FA; --ink:#12203D; --ink-soft:#54607A; --ink-faint:#98A1B8;
     --field-bg:#EDF0F6; --line:#DFE3EC;
     --disp1:#D9D7CB; --disp2:#E4E2D8; --disp-border:#B0AEA2;
@@ -46,6 +48,8 @@
     --seg-glow-a:rgba(27,42,82,0); --seg-glow-b:rgba(27,42,82,0);
   }
   [data-theme="dark"]{
+    --brand:#EDE7D6;       /* crema: legible sobre fondo oscuro */
+    --accent:#B9852E;      /* dorado: visible sobre fondo oscuro */
     --paper:#0D1424; --ink:#E7ECF7; --ink-soft:#9FAAC4; --ink-faint:#6B7592;
     --field-bg:#182036; --line:#243154;
     --disp1:#05070D; --disp2:#0E1526; --disp-border:#060911;
@@ -74,12 +78,12 @@
   /* ---------- login ---------- */
   #viewLogin{ justify-content:center; padding:0 32px; background:var(--paper); }
   .login-brand{ text-align:center; margin-bottom:40px; }
-  .login-brand .mark{ font-family:Georgia,"Times New Roman",serif; font-size:28px; color:var(--navy); }
+  .login-brand .mark{ font-family:Georgia,"Times New Roman",serif; font-size:28px; color:var(--brand); }
   .login-brand .org{ font-size:11px; color:var(--ink-faint); margin-top:6px; line-height:1.4; }
   .login-hint{ font-size:12.5px; color:var(--ink-soft); text-align:center; margin-bottom:16px; line-height:1.5; }
   .login-error{ font-size:12.5px; color:var(--danger); text-align:center; min-height:16px; margin-bottom:6px; }
   .install-btn{
-    display:none; width:100%; background:transparent; color:var(--navy); border:1.5px solid var(--navy);
+    display:none; width:100%; background:transparent; color:var(--accent); border:1.5px solid var(--accent);
     border-radius:12px; padding:13px 0; font-size:14.5px; font-weight:600; margin-top:12px;
     cursor:pointer; font-family:inherit;
   }
@@ -87,12 +91,12 @@
   .install-btn:active{ background:var(--field-bg); }
   #viewGps{ justify-content:center; align-items:center; padding:0 40px; background:var(--paper); text-align:center; }
   .gps-wait{ display:flex; flex-direction:column; align-items:center; }
-  .gps-spinner{ width:44px; height:44px; border-radius:50%; border:4px solid var(--field-bg); border-top-color:var(--navy); animation:spin 0.9s linear infinite; margin-bottom:24px; }
+  .gps-spinner{ width:44px; height:44px; border-radius:50%; border:4px solid var(--field-bg); border-top-color:var(--accent); animation:spin 0.9s linear infinite; margin-bottom:24px; }
   .gps-wait-title{ font-size:18px; font-weight:700; color:var(--ink); margin-bottom:10px; }
   .gps-wait-msg{ font-size:13px; color:var(--ink-soft); line-height:1.6; }
   .login-field{ background:var(--field-bg); border:1.5px solid transparent; border-radius:12px; padding:15px 16px;
     font-size:16px; color:var(--ink); margin-bottom:14px; width:100%; font-family:inherit; }
-  .login-field:focus{ outline:none; border-color:var(--navy); }
+  .login-field:focus{ outline:none; border-color:var(--accent); }
   .login-field::placeholder{ color:var(--ink-faint); }
   .login-btn{ width:100%; background:linear-gradient(180deg,var(--navy-hi),var(--navy)); color:#fff; border:none; border-radius:12px;
     padding:16px 0; font-size:16px; font-weight:600; margin-top:8px; cursor:pointer; font-family:inherit;
@@ -200,14 +204,23 @@
   .cfg-label{ font-size:11.5px; font-weight:700; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.4px; margin-bottom:8px; }
   .cfg-field{ background:var(--field-bg); border:1.5px solid transparent; border-radius:10px; padding:11px 13px;
     font-size:14px; color:var(--ink); width:100%; font-family:ui-monospace,Consolas,monospace; margin-bottom:8px; }
-  .cfg-field:focus{ outline:none; border-color:var(--navy); }
+  .cfg-field:focus{ outline:none; border-color:var(--accent); }
   .cfg-range-row{ display:flex; gap:8px; align-items:center; margin-bottom:6px; }
   .cfg-range-row .p{ flex:0 0 46px; font-size:13px; color:var(--ink-soft); font-weight:600; }
   .cfg-range-row input{ flex:1; background:var(--field-bg); border:1.5px solid transparent; border-radius:8px; padding:8px 10px;
     font-size:13px; font-family:ui-monospace,Consolas,monospace; color:var(--ink); }
-  .cfg-range-row input:focus{ outline:none; border-color:var(--navy); }
+  .cfg-range-row input:focus{ outline:none; border-color:var(--accent); }
   .cfg-hard{ font-size:11px; color:var(--ink-faint); margin:2px 0 10px; }
 
+  .lista-hoy{ max-height:none; }
+  .lista-hoy .vacio{ font-size:12.5px; color:var(--ink-faint); padding:6px 0; }
+  .lh-item{ display:flex; align-items:baseline; gap:8px; padding:7px 0; border-bottom:1px solid var(--line); }
+  .lh-num{ flex:0 0 auto; font-family:ui-monospace,Consolas,monospace; font-size:12.5px; font-weight:700;
+    color:#fff; background:var(--navy); border-radius:5px; padding:2px 6px; }
+  .lh-body{ flex:1 1 auto; min-width:0; }
+  .lh-punto{ font-size:12px; color:var(--ink-soft); display:block; }
+  .lh-vals{ font-size:13px; color:var(--ink); font-family:ui-monospace,Consolas,monospace; }
+  .lh-vals b{ font-weight:700; }
   .theme-toggle{ display:flex; background:var(--field-bg); border-radius:10px; overflow:hidden; }
   .theme-toggle button{ flex:1; border:none; background:transparent; color:var(--ink-soft); font-family:inherit; font-size:13.5px;
     font-weight:600; padding:10px 0; cursor:pointer; }
@@ -216,12 +229,12 @@
   .punto-row{ display:flex; align-items:center; gap:8px; padding:9px 0; border-bottom:1px solid var(--line); }
   .punto-tag{ flex:0 0 auto; font-family:ui-monospace,Consolas,monospace; font-size:12px; font-weight:700; color:#fff; background:var(--navy); border-radius:6px; padding:3px 7px; }
   .punto-nombre{ flex:1 1 auto; font-size:14px; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .punto-nombre-edit{ flex:1 1 auto; font-size:14px; color:var(--ink); font-family:inherit; border:1.5px solid var(--navy); border-radius:8px; padding:5px 8px; background:var(--paper); }
+  .punto-nombre-edit{ flex:1 1 auto; font-size:14px; color:var(--ink); font-family:inherit; border:1.5px solid var(--accent); border-radius:8px; padding:5px 8px; background:var(--paper); }
   .punto-btn{ flex:0 0 auto; width:28px; height:28px; border:none; background:transparent; cursor:pointer; color:var(--ink-soft); display:flex; align-items:center; justify-content:center; }
   .punto-btn.del{ color:var(--danger); }
   .punto-add-row{ display:flex; gap:8px; margin-top:10px; }
   .punto-add-row input{ flex:1; background:var(--field-bg); border:1.5px solid transparent; border-radius:8px; padding:9px 11px; font-size:13.5px; color:var(--ink); font-family:inherit; }
-  .punto-add-row input:focus{ outline:none; border-color:var(--navy); }
+  .punto-add-row input:focus{ outline:none; border-color:var(--accent); }
   .punto-add-row button{ flex:0 0 auto; width:38px; border:none; border-radius:8px; background:var(--navy); color:#fff; font-size:19px; font-weight:700; cursor:pointer; }
 
   .instr p{ font-size:13.5px; line-height:1.6; color:var(--ink); margin:0 0 12px; }
@@ -368,6 +381,10 @@
     <div class="subbar"><button class="icon-btn" id="configBack"><svg width="20" height="20" viewBox="0 0 20 20"><path d="M12.5 4l-6 6 6 6" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button><span class="title">Configuración</span></div>
     <div class="subbody">
       <div class="cfg-section">
+        <div class="cfg-label">Registros de hoy</div>
+        <div id="listaHoy" class="lista-hoy"></div>
+      </div>
+      <div class="cfg-section">
         <div class="cfg-label">Apariencia</div>
         <div class="theme-toggle">
           <button data-theme-choice="light" class="active">Claro</button>
@@ -378,18 +395,6 @@
         <div class="cfg-label">Puntos de muestreo</div>
         <div id="puntosList"></div>
         <div class="punto-add-row"><input id="nuevoPuntoNombre" placeholder="Nombre del nuevo punto" maxlength="40"><button id="addPuntoBtn">+</button></div>
-      </div>
-      <div class="cfg-section">
-        <div class="cfg-label">URL del backend (Apps Script)</div>
-        <input class="cfg-field" id="cfgUrl" value="">
-        <button class="login-btn" id="testBtn" style="margin-top:4px;">Probar conexión</button>
-        <div class="cfg-hard" id="testResult" style="margin-top:10px;"></div>
-      </div>
-      <div class="cfg-section">
-        <div class="cfg-label">Numeración de registros</div>
-        <div class="cfg-hard" id="contadorInfo"></div>
-        <button class="login-btn" id="resetContadorBtn" style="background:#A33B2E;">Reiniciar numeración a 0001</button>
-        <div class="cfg-hard" style="margin-top:8px;">Úsalo solo si también vaciaste la hoja de cálculo. Si no, los registros nuevos chocarán con los que ya están guardados.</div>
       </div>
       <div class="cfg-section">
         <div class="cfg-label">Rango esperado — pH</div>
@@ -406,6 +411,18 @@
         <div class="cfg-hard">Límite del instrumento: -50 – 300 (fijo)</div>
         <div class="cfg-range-row"><span class="p">Mín.</span><input id="cfgTempMin" value="5"><span class="p">Máx.</span><input id="cfgTempMax" value="25"></div>
       </div>
+      <div class="cfg-section">
+        <div class="cfg-label">URL del backend (Apps Script)</div>
+        <input class="cfg-field" id="cfgUrl" value="">
+        <button class="login-btn" id="testBtn" style="margin-top:4px;">Probar conexión</button>
+        <div class="cfg-hard" id="testResult" style="margin-top:10px;"></div>
+      </div>
+      <div class="cfg-section">
+        <div class="cfg-label">Numeración de registros</div>
+        <div class="cfg-hard" id="contadorInfo"></div>
+        <button class="login-btn" id="resetContadorBtn" style="background:#A33B2E;">Reiniciar numeración a 0001</button>
+        <div class="cfg-hard" style="margin-top:8px;">Úsalo solo si también vaciaste la hoja de cálculo. Si no, los registros nuevos chocarán con los que ya están guardados.</div>
+      </div>
     </div>
   </div>
 
@@ -413,10 +430,35 @@
   <div class="view subview" id="viewInstr">
     <div class="subbar"><button class="icon-btn" id="instrBack"><svg width="20" height="20" viewBox="0 0 20 20"><path d="M12.5 4l-6 6 6 6" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></button><span class="title">Instrucciones</span></div>
     <div class="subbody instr">
-      <h3>Qué hace</h3><p>Registra en el celular cada lectura de pH, TDS y temperatura tomada con los medidores del equipo, junto con la ubicación y la hora, aunque no haya señal en el momento.</p>
-      <h3>Puntos de muestreo</h3><p>Se configuran en el menú → Configuración: cada uno tiene un nombre propio y un número que la app asigna solo.</p>
-      <h3>Apariencia</h3><p>En Configuración se puede cambiar entre modo claro (mejor para pantalla/proyector) y oscuro (mejor bajo sol directo en el campo).</p>
-      <h3>El punto de color</h3><p>Naranja: hay al menos una medición esperando enviarse. Verde: todo lo registrado ya se sincronizó.</p>
+      <h3>Qué hace esta aplicación</h3>
+      <p>Guarda cada medición de pH, TDS y temperatura junto con la fecha, la hora y la ubicación exacta, y la envía sola a la hoja de resultados del proyecto. Funciona aunque no haya señal en el río: guarda primero en el celular y envía después.</p>
+
+      <h3>Cómo registrar una medición</h3>
+      <p>1. Elige el punto de muestreo en la lista de arriba.<br>
+         2. Escribe los tres valores que leíste en los instrumentos.<br>
+         3. Presiona <b>Registrar</b>.</p>
+      <p>Después de registrar, las casillas se limpian solas y el número de muestra avanza, listo para la siguiente.</p>
+
+      <h3>El punto de color</h3>
+      <p><b>Verde:</b> todo enviado, no queda nada pendiente.<br>
+         <b>Ámbar:</b> hay mediciones guardadas en el celular esperando señal.<br>
+         <b>Rojo parpadeando:</b> enviando en este momento.</p>
+      <p>Si queda en ámbar, no se perdió nada: la app reintenta sola cuando vuelve la señal.</p>
+
+      <h3>Si un valor sale raro</h3>
+      <p>Si escribes algo fuera de lo normal para el río, la app lo muestra y pregunta si quieres registrarlo igual. Si el valor es imposible para el instrumento, lo bloquea y te lo explica.</p>
+
+      <h3>Si te equivocaste</h3>
+      <p>Menú → <b>Eliminar último registro</b>. Muestra los datos de la última medición y pregunta antes de borrarla. Solo se puede borrar la última, y hay que volver a escribir los tres valores.</p>
+
+      <h3>Revisar lo registrado hoy</h3>
+      <p>Menú → <b>Configuración</b> → arriba del todo está <b>Registros de hoy</b>, con la lista de todas las mediciones del día para comprobarlas contra tu libreta.</p>
+
+      <h3>Puntos de muestreo</h3>
+      <p>Se crean y se renombran en Configuración → Puntos de muestreo. El número lo asigna la app sola; no hay un límite de cuántos puedes tener.</p>
+
+      <h3>Apariencia</h3>
+      <p>En Configuración puedes cambiar entre modo claro (mejor bajo techo o en proyector) y modo oscuro (mejor bajo sol directo).</p>
     </div>
   </div>
 
@@ -866,7 +908,7 @@
   menuBack.addEventListener("click", function(){ showView("viewShell"); });
   $("#goGraficos").addEventListener("click", function(){ mostrarTab("tabGraficos"); showView("viewShell"); });
   $("#goRegistrar").addEventListener("click", function(){ mostrarTab("tabRegistrar"); showView("viewShell"); });
-  goConfig.addEventListener("click", function(){ refrescarContadorInfo(); showView("viewConfig"); });
+  goConfig.addEventListener("click", function(){ refrescarContadorInfo(); renderListaHoy(); showView("viewConfig"); });
 
   // ---- Eliminar el ultimo registro (solo el ultimo, y se borra completo) ----
   $("#goBorrar").addEventListener("click", function(){
@@ -914,6 +956,30 @@
     renderPuntoSelect(); updateLed(); drawChart();
     warnYes.textContent = "Sí, registrar";
     showView("viewShell");
+  }
+
+  function renderListaHoy(){
+    var cont = $("#listaHoy");
+    var hoy = fechaHoy();
+    var delDia = registros.filter(function(r){ return r.tipo==="REAL" && r.fecha===hoy; });
+    if(delDia.length===0){
+      cont.innerHTML = '<div class="vacio">Todavía no hay mediciones registradas hoy.</div>';
+      return;
+    }
+    cont.innerHTML = "";
+    delDia.forEach(function(r){
+      // Del measurement_id solo interesa el numero correlativo del final.
+      var corr = String(r.id).split("-").pop();
+      var fila = document.createElement("div");
+      fila.className = "lh-item";
+      fila.innerHTML =
+        '<span class="lh-num">'+corr+'</span>' +
+        '<span class="lh-body">' +
+          '<span class="lh-punto">'+String(r.puntoNombre).replace(/</g,"&lt;")+' · muestra '+r.muestra+'</span>' +
+          '<span class="lh-vals">pH <b>'+r.ph+'</b> · TDS <b>'+r.tds+'</b> ppm · <b>'+r.temp+'</b> °C</span>' +
+        '</span>';
+      cont.appendChild(fila);
+    });
   }
 
   function refrescarContadorInfo(){
