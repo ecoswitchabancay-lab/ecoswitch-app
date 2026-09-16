@@ -701,13 +701,19 @@
   /* ================= tema (persistente) ================= */
   var temaGuardado = cargar(LS.theme, "light");
   document.documentElement.setAttribute("data-theme", temaGuardado);
-  Array.prototype.forEach.call(document.querySelectorAll(".theme-toggle button"), function(b){
+  // OJO: el selector debe ser [data-theme-choice], NO ".theme-toggle button".
+  // Los interruptores de sonido y vibracion comparten la clase .theme-toggle
+  // solo por estilo; si entraran aqui, al pulsarlos se pondria data-theme="null"
+  // y TODAS las variables de color quedarian sin definir.
+  var botonesTema = document.querySelectorAll("[data-theme-choice]");
+  Array.prototype.forEach.call(botonesTema, function(b){
     b.classList.toggle("active", b.getAttribute("data-theme-choice")===temaGuardado);
     b.addEventListener("click", function(){
       var t = b.getAttribute("data-theme-choice");
+      if(t !== "light" && t !== "dark") return;   // defensa adicional
       document.documentElement.setAttribute("data-theme", t);
       guardar(LS.theme, t);
-      Array.prototype.forEach.call(document.querySelectorAll(".theme-toggle button"), function(x){ x.classList.toggle("active", x===b); });
+      Array.prototype.forEach.call(botonesTema, function(x){ x.classList.toggle("active", x===b); });
     });
   });
 
@@ -1185,8 +1191,27 @@
     $("#contadorInfo").textContent = "Usuario «"+(currentUser||"—")+"»: siguiente registro será el número "+("0000"+(n+1)).slice(-4)+".";
   }
   $("#resetContadorBtn").addEventListener("click", function(){
-    guardar(clavesDe(currentUser).correlativo, 0);
-    refrescarContadorInfo();
+    var n = cargar(clavesDe(currentUser).correlativo, 0);
+    warnTitle.textContent = "Reiniciar numeración";
+    warnMsg.innerHTML =
+      "Se reiniciará la numeración del usuario <b>" + currentUser + "</b>.<br>" +
+      "Su próximo registro volverá a ser el <b>0001</b> (ahora iría por el " +
+      ("0000"+(n+1)).slice(-4) + ").<br><br>" +
+      "<b>Antes de continuar</b>, hay que eliminar de la hoja de cálculo los registros " +
+      "de este usuario. Si no se hace, los números repetidos serán rechazados por el " +
+      "servidor y esas mediciones no llegarán a guardarse.<br><br>" +
+      "¿Reiniciar de todas formas?";
+    warnActionsConfirm.hidden = false; warnActionsOk.hidden = true;
+    warnYes.textContent = "Sí, reiniciar";
+    pendingConfirm = function(){
+      guardar(clavesDe(currentUser).correlativo, 0);
+      refrescarContadorInfo();
+      warnTitle.textContent = "Numeración reiniciada";
+      warnMsg.innerHTML = "El usuario <b>" + currentUser + "</b> empezará de nuevo en <b>0001</b>.";
+      warnActionsConfirm.hidden = true; warnActionsOk.hidden = false;
+      warnModal.classList.add("show");
+    };
+    warnModal.classList.add("show");
   });
 
   $("#testBtn").addEventListener("click", function(){
@@ -1235,6 +1260,7 @@
     warnTitle.textContent = "Valor fuera de lo esperado";
     warnMsg.innerHTML = lineas + "<br><br>¿Registrar de todas formas?";
     warnActionsConfirm.hidden = false; warnActionsOk.hidden = true;
+    warnYes.textContent = "Sí, registrar";
     warnModal.classList.add("show");
   }
   function mostrarFaltanDatos(){
