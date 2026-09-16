@@ -171,6 +171,9 @@
   .dot{ width:8px; height:8px; border-radius:50%; }
 
 
+  .demo-aviso{ display:none; text-align:center; font-size:12px; font-weight:700; letter-spacing:.3px;
+    color:#7A5A16; background:var(--brass-bg); border:1px solid #E3CE99; border-radius:8px;
+    padding:6px 0; margin:0 0 10px; }
   .banner-wrap{ flex:1 1 auto; min-height:0; overflow:hidden; margin:0 -22px; display:flex; align-items:flex-end; }
   .banner-img{ width:100%; display:block; object-fit:cover; }
   .homebar{ position:absolute; bottom:8px; left:50%; transform:translateX(-50%); width:120px; height:4px; border-radius:3px; background:var(--ink); opacity:.28; }
@@ -332,6 +335,7 @@
           <span class="cta-label">Registrar</span><span class="cta-spinner"></span><span class="cta-check">&#10003;</span>
         </button>
       </div>
+      <div class="demo-aviso" id="demoAviso">Modo demo · datos llenados al azar</div>
       <div class="banner-wrap"><img src="banner.jpg" alt="ECOSWITCH" class="banner-img"></div>
     </div>
 
@@ -394,6 +398,18 @@
           <button data-theme-choice="light" class="active">Claro</button>
           <button data-theme-choice="dark">Oscuro</button>
         </div>
+      </div>
+      <div class="cfg-section">
+        <div class="cfg-label">Usuarios de este equipo</div>
+        <div id="usuariosList"></div>
+        <div class="cfg-hard" style="margin-top:10px;">Añadir un usuario nuevo:</div>
+        <div class="punto-add-row" style="flex-wrap:wrap;">
+          <input id="nuNick" placeholder="Usuario (máx. 12 letras)" maxlength="12" style="flex:1 1 100%;">
+          <input id="nuPass" type="password" placeholder="Contraseña" style="flex:1 1 45%;">
+          <input id="nuPass2" type="password" placeholder="Repetir" style="flex:1 1 45%;">
+          <button id="nuAddBtn" style="flex:0 0 38px;">+</button>
+        </div>
+        <div class="cfg-hard" id="nuMsg" style="margin-top:6px;"></div>
       </div>
       <div class="cfg-section">
         <div class="cfg-label">Avisos al confirmar el envío</div>
@@ -579,7 +595,7 @@
 
   var puntos = cargar(LS.puntos, [{num:1,nombre:"Inicio del río"},{num:2,nombre:"Punto medio"},{num:3,nombre:"Desembocadura"}]);
   var puntoCounter = cargar(LS.puntoCounter, 3);
-  var muestraPorPunto = cargar(LS.muestraPorPunto, {});
+  var muestraPorPunto = {};   // se carga por usuario al iniciar sesion
   var config = cargar(LS.config, DEFAULT_CONFIG);
   // Migracion: si la URL guardada no sirve (version vieja, o pegada por error),
   // se reemplaza por la correcta sin que el usuario tenga que hacer nada.
@@ -603,6 +619,7 @@
   var btnMenu=$("#btnMenu"), menuBack=$("#menuBack"), goConfig=$("#goConfig"), goInstr=$("#goInstr"), doLogout=$("#doLogout");
   var configBack=$("#configBack"), instrBack=$("#instrBack");
   var puntosList=$("#puntosList"), nuevoPuntoNombre=$("#nuevoPuntoNombre"), addPuntoBtn=$("#addPuntoBtn");
+  var demoAviso=$("#demoAviso");
   var warnModal=$("#warnModal"), warnMsg=$("#warnMsg"), warnNo=$("#warnNo"), warnYes=$("#warnYes");
   var warnTitle=$("#warnTitle"), warnActionsConfirm=$("#warnActionsConfirm"), warnActionsOk=$("#warnActionsOk"), warnOk=$("#warnOk");
   var cfgUrl=$("#cfgUrl"), cfgPhMin=$("#cfgPhMin"), cfgPhMax=$("#cfgPhMax"), cfgTdsMin=$("#cfgTdsMin"),
@@ -650,7 +667,7 @@
   function horaAhora(){ var d=new Date(); return pad(d.getHours())+":"+pad(d.getMinutes()); }
   function nuevoId(){
     // Contador secuencial por usuario, guardado localmente. Formato: M-Clementinapl-0001
-    var claveCont = "eco_cont_" + currentUser;
+    var claveCont = clavesDe(currentUser).correlativo;
     var n = cargar(claveCont, 0) + 1;
     guardar(claveCont, n);
     var secuencia = ("0000" + n).slice(-4);
@@ -786,7 +803,7 @@
         if(puntos.length<=1) return;
         puntos = puntos.filter(function(x){ return x.num!==pt.num; });
         delete muestraPorPunto[pt.num];
-        guardar(LS.puntos, puntos); guardar(LS.muestraPorPunto, muestraPorPunto);
+        guardar(LS.puntos, puntos); guardar(clavesDe(currentUser).muestras, muestraPorPunto);
         renderPuntosConfig(); renderPuntoSelect();
       });
       puntosList.appendChild(row);
@@ -821,7 +838,7 @@
   /* ================= grafico local (a partir de mediciones reales de este celular) ================= */
   function drawChart(){
     var svg=$("#chartSvg");
-    var reales = registros.filter(function(r){ return r.tipo==="REAL"; }).slice(-8);
+    var reales = registros.filter(function(r){ return r.operador===currentUser; }).slice(-8);
     if(reales.length<2){ svg.innerHTML=""; return; }
     var W=300,pad=10;
     var ph=reales.map(function(r){ return parseFloat(r.ph); });
@@ -919,26 +936,26 @@
     entrarAlSistema(nick, false);
   }
 
+  function clavesDe(nick){
+    // Cada usuario (incluido "demo") lleva sus propios contadores en este equipo.
+    return { muestras:"eco_muestra_"+nick, correlativo:"eco_cont_"+nick };
+  }
+
   function entrarAlSistema(nick, demo){
     currentUser = nick;
     isDemo = demo;
     if(!demo){ guardar(LS.lastUser, nick); }
+    muestraPorPunto = cargar(clavesDe(nick).muestras, {});
+    demoAviso.style.display = demo ? "block" : "none";
     loginPass.value = ""; loginPass2.value = "";
 
     renderPuntosConfig(); renderPuntoSelect();
     if(isDemo){ fillMetrics(randomPlausible()); } else { clearMetrics(); }
     drawChart(); updateLed();
 
-    if(isDemo){
-      // El modo demo no usa GPS real: entra directo con coordenadas vacias.
-      ubicacionActual = {lat:null,lon:null,precision:null};
-      mostrarUbicacionEnPantalla();
-      showView("viewShell");
-      return;
-    }
-
-    // Usuario real: capturar GPS ANTES de mostrar el formulario, para que el
-    // primer registro ya tenga coordenadas (soluciona el problema de la 1ra fila).
+    // Tanto el usuario real como el demo capturan GPS antes de mostrar el
+    // formulario: el demo debe comportarse igual que el real para que sirva
+    // como demostracion fiel.
     showView("viewGps");
     gpsWaitTitle.textContent = "Buscando ubicación…";
     gpsWaitMsg.textContent = "Mantén el celular con el cielo despejado. La primera lectura puede tardar unos segundos.";
@@ -1029,13 +1046,13 @@
   menuBack.addEventListener("click", function(){ showView("viewShell"); });
   $("#goGraficos").addEventListener("click", function(){ mostrarTab("tabGraficos"); showView("viewShell"); });
   $("#goRegistrar").addEventListener("click", function(){ mostrarTab("tabRegistrar"); showView("viewShell"); });
-  goConfig.addEventListener("click", function(){ refrescarContadorInfo(); pintarSwitches(); showView("viewConfig"); });
+  goConfig.addEventListener("click", function(){ refrescarContadorInfo(); pintarSwitches(); renderUsuarios(); $("#nuMsg").textContent=""; showView("viewConfig"); });
   $("#goLista").addEventListener("click", function(){ renderListaHoy(); showView("viewLista"); });
   $("#listaBack").addEventListener("click", function(){ showView("viewMenu"); });
 
   // ---- Eliminar el ultimo registro (solo el ultimo, y se borra completo) ----
   $("#goBorrar").addEventListener("click", function(){
-    var mios = registros.filter(function(r){ return r.tipo==="REAL"; });
+    var mios = registros.filter(function(r){ return r.operador===currentUser; });
     if(mios.length===0){
       warnTitle.textContent = "No hay registros";
       warnMsg.innerHTML = "Todavía no has registrado ninguna medición en este celular.";
@@ -1069,10 +1086,10 @@
     // 3) devolver el contador de muestra de ese punto
     if(muestraPorPunto[reg.puntoNum]){
       muestraPorPunto[reg.puntoNum] = Math.max(0, muestraPorPunto[reg.puntoNum]-1);
-      guardar(LS.muestraPorPunto, muestraPorPunto);
+      guardar(clavesDe(currentUser).muestras, muestraPorPunto);
     }
     // 4) devolver el contador del measurement_id para reutilizar el mismo numero
-    var claveCont = "eco_cont_" + currentUser;
+    var claveCont = clavesDe(currentUser).correlativo;
     var n = cargar(claveCont, 0);
     if(n>0) guardar(claveCont, n-1);
 
@@ -1084,7 +1101,7 @@
   function renderListaHoy(){
     var cont = $("#listaHoy");
     var hoy = fechaHoy();
-    var delDia = registros.filter(function(r){ return r.tipo==="REAL" && r.fecha===hoy; });
+    var delDia = registros.filter(function(r){ return r.operador===currentUser && r.fecha===hoy; });
     var res = $("#listaResumen");
     if(delDia.length===0){
       cont.innerHTML = '<div class="vacio">Todavía no hay mediciones registradas hoy.</div>';
@@ -1112,6 +1129,41 @@
     });
   }
 
+  function renderUsuarios(){
+    var cont = $("#usuariosList");
+    cont.innerHTML = "";
+    var nicks = Object.keys(usuarios);
+    if(nicks.length===0){ cont.innerHTML = '<div class="vacio">Ninguno todavía.</div>'; return; }
+    nicks.forEach(function(nick){
+      var n = cargar(clavesDe(nick).correlativo, 0);
+      var fila = document.createElement("div");
+      fila.className = "punto-row";
+      fila.innerHTML =
+        '<span class="punto-tag">'+(nick===currentUser?"●":"·")+'</span>' +
+        '<span class="punto-nombre">'+nick.replace(/</g,"&lt;")+
+          '<span style="color:var(--ink-faint); font-size:11.5px;"> · '+n+' registro'+(n===1?"":"s")+'</span></span>';
+      cont.appendChild(fila);
+    });
+  }
+
+  $("#nuAddBtn").addEventListener("click", function(){
+    var msg = $("#nuMsg");
+    var nick = normalizarNick($("#nuNick").value);
+    var p1 = $("#nuPass").value, p2 = $("#nuPass2").value;
+    msg.style.color = "var(--danger)";
+    if(!nick){ msg.textContent = "Escribe un nombre de usuario."; return; }
+    if(nick === "demo"){ msg.textContent = "«demo» está reservado para las demostraciones."; return; }
+    if(usuarios[nick]){ msg.textContent = "Ya existe un usuario llamado «"+nick+"»."; return; }
+    if(p1.length < 3){ msg.textContent = "La contraseña debe tener al menos 3 caracteres."; return; }
+    if(p1 !== p2){ msg.textContent = "Las contraseñas no coinciden."; return; }
+    usuarios[nick] = { pass: p1 };
+    guardar(LS.usuarios, usuarios);
+    $("#nuNick").value=""; $("#nuPass").value=""; $("#nuPass2").value="";
+    msg.style.color = "var(--ok)";
+    msg.textContent = "Usuario «"+nick+"» creado. Para usarlo: menú → Cerrar sesión e ingresar con ese nombre.";
+    renderUsuarios();
+  });
+
   function pintarSwitches(){
     Array.prototype.forEach.call(document.querySelectorAll("[data-sw]"), function(b){
       var activo = config[b.getAttribute("data-sw")] === true;
@@ -1129,11 +1181,11 @@
   });
 
   function refrescarContadorInfo(){
-    var n = cargar("eco_cont_"+currentUser, 0);
+    var n = cargar(clavesDe(currentUser).correlativo, 0);
     $("#contadorInfo").textContent = "Usuario «"+(currentUser||"—")+"»: siguiente registro será el número "+("0000"+(n+1)).slice(-4)+".";
   }
   $("#resetContadorBtn").addEventListener("click", function(){
-    guardar("eco_cont_"+currentUser, 0);
+    guardar(clavesDe(currentUser).correlativo, 0);
     refrescarContadorInfo();
   });
 
@@ -1210,19 +1262,6 @@
   function procesarRegistro(){
     registrarBtn.classList.add("sending");
 
-    // Modo demo: solo animacion de vista previa. No persiste ni intenta enviar nada real.
-    if(isDemo){
-      setTimeout(function(){
-        registrarBtn.classList.remove("sending"); registrarBtn.classList.add("done");
-        setTimeout(function(){
-          registrarBtn.classList.remove("done");
-          fillMetrics(randomPlausible());
-          limpiarEstadoCampos();
-        }, 450);
-      }, 500);
-      return;
-    }
-
     // Se usa la ubicacion YA capturada (al entrar, o refrescada tras el registro
     // anterior). No se recaptura aqui, para no meter una demora entre presionar
     // Registrar y ver el dato guardado.
@@ -1234,12 +1273,12 @@
       lat: ubic.lat, lon: ubic.lon, precision: ubic.precision,
       puntoNum: punto.num, puntoNombre: punto.nombre, muestra: muestra,
       ph: phEl.value, tds: tdsEl.value, temp: tempEl.value,
-      operador: currentUser || "—", tipo: "REAL", sync: "pendiente"
+      operador: currentUser || "—", tipo: (isDemo ? "DEMO" : "REAL"), sync: "pendiente"
     };
 
     registros.push(registro); guardar(LS.registros, registros);
     ledEnviando();
-    muestraPorPunto[punto.num]=muestra; guardar(LS.muestraPorPunto, muestraPorPunto);
+    muestraPorPunto[punto.num]=muestra; guardar(clavesDe(currentUser).muestras, muestraPorPunto);
     muestraNum.textContent = String(muestra+1);
     updateLed();
 
@@ -1250,7 +1289,10 @@
     registrarBtn.classList.remove("sending"); registrarBtn.classList.add("done");
     setTimeout(function(){
       registrarBtn.classList.remove("done");
-      clearMetrics(); limpiarEstadoCampos();
+      // En demo se vuelve a llenar con valores de ejemplo; en uso real se deja
+      // en blanco para escribir la siguiente lectura.
+      if(isDemo){ fillMetrics(randomPlausible()); } else { clearMetrics(); }
+      limpiarEstadoCampos();
       drawChart();
     }, 450);
 
