@@ -39,6 +39,7 @@
     --backdrop:#0B1220;
   }
   [data-theme="light"]{
+    --led-ok:#20DA1D;      /* verde del indicador luminoso */
     --brand:#16234A;       /* titulo ECOSWITCH del login  */
     --accent:#16234A;      /* bordes de foco y acentos    */
     --paper:#F7F8FA; --ink:#12203D; --ink-soft:#54607A; --ink-faint:#98A1B8;
@@ -48,6 +49,7 @@
     --seg-glow-a:rgba(27,42,82,0); --seg-glow-b:rgba(27,42,82,0);
   }
   [data-theme="dark"]{
+    --led-ok:#20DA1D;      /* verde del indicador luminoso */
     --brand:#EDE7D6;       /* crema: legible sobre fondo oscuro */
     --accent:#B9852E;      /* dorado: visible sobre fondo oscuro */
     --paper:#0D1424; --ink:#E7ECF7; --ink-soft:#9FAAC4; --ink-faint:#6B7592;
@@ -80,6 +82,16 @@
   .login-brand{ text-align:center; margin-bottom:40px; }
   .login-brand .mark{ font-family:Georgia,"Times New Roman",serif; font-size:28px; color:var(--brand); }
   .login-brand .org{ font-size:11px; color:var(--ink-faint); margin-top:6px; line-height:1.4; }
+  /* Contenedor de contraseña con botón de ojo. El margen inferior se traslada
+     del input al contenedor para que el ojo quede centrado sobre la casilla. */
+  .pass-wrap{ position:relative; margin-bottom:14px; }
+  .pass-wrap .login-field{ margin-bottom:0; padding-right:48px; }
+  .pass-wrap .cfg-field{ margin-bottom:0; padding-right:44px; }
+  .pass-eye{ position:absolute; right:4px; top:50%; transform:translateY(-50%);
+    width:40px; height:40px; border:none; background:transparent; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; color:var(--ink-faint); padding:0; }
+  .pass-eye svg{ width:21px; height:21px; }
+  .pass-eye.on{ color:var(--accent); }
   .login-hint{ font-size:12.5px; color:var(--ink-soft); text-align:center; margin-bottom:16px; line-height:1.5; }
   .login-error{ font-size:12.5px; color:var(--danger); text-align:center; min-height:16px; margin-bottom:6px; }
   .install-btn{
@@ -111,8 +123,8 @@
     justify-content:center; cursor:pointer; border-radius:50%; }
   .icon-btn:active{ background:rgba(255,255,255,.14); }
   .appbar .mark{ font-family:Georgia,"Times New Roman",serif; font-size:18px; }
-  .led{ width:16px; height:16px; border-radius:50%; background:var(--ok); margin-right:10px; flex:0 0 auto;
-    box-shadow:0 0 9px rgba(31,110,74,.95), inset 0 -2px 4px rgba(0,0,0,.25); transition:background .2s; }
+  .led{ width:16px; height:16px; border-radius:50%; background:var(--led-ok); margin-right:10px; flex:0 0 auto;
+    box-shadow:0 0 10px rgba(32,218,29,.95), inset 0 -2px 4px rgba(0,0,0,.22); transition:background .2s; }
   .led.pending{ background:var(--brass); box-shadow:0 0 9px rgba(185,133,46,1), inset 0 -2px 4px rgba(0,0,0,.25); }
   .led.sending{ background:#E03A2F; box-shadow:0 0 12px rgba(224,58,47,1), inset 0 -2px 4px rgba(0,0,0,.25);
     animation:blink .5s steps(1,end) infinite; }
@@ -267,8 +279,8 @@
     </div>
     <div class="login-hint" id="loginHint">Ingresa tu usuario para comenzar</div>
     <input class="login-field" id="loginUser" type="text" placeholder="Usuario (ej: Clementinapl)" autocomplete="off" maxlength="12">
-    <input class="login-field" id="loginPass" type="password" placeholder="Contraseña" autocomplete="off">
-    <input class="login-field" id="loginPass2" type="password" placeholder="Repite la contraseña" autocomplete="off" style="display:none;">
+    <div class="pass-wrap"><input class="login-field" id="loginPass" type="password" placeholder="Contraseña" autocomplete="off"></div>
+    <div class="pass-wrap" id="loginPass2Wrap" style="display:none;"><input class="login-field" id="loginPass2" type="password" placeholder="Repite la contraseña" autocomplete="off"></div>
     <div class="login-error" id="loginError"></div>
     <button class="login-btn" id="loginBtn">Continuar</button>
     <button class="install-btn" id="installBtn">⬇ Instalar en este celular</button>
@@ -405,8 +417,8 @@
         <div class="cfg-hard" style="margin-top:10px;">Añadir un usuario nuevo:</div>
         <div class="punto-add-row" style="flex-wrap:wrap;">
           <input id="nuNick" placeholder="Usuario (máx. 12 letras)" maxlength="12" style="flex:1 1 100%;">
-          <input id="nuPass" type="password" placeholder="Contraseña" style="flex:1 1 45%;">
-          <input id="nuPass2" type="password" placeholder="Repetir" style="flex:1 1 45%;">
+          <div class="pass-wrap" style="flex:1 1 45%; margin-bottom:0;"><input id="nuPass" class="cfg-field" type="password" placeholder="Contraseña"></div>
+          <div class="pass-wrap" style="flex:1 1 45%; margin-bottom:0;"><input id="nuPass2" class="cfg-field" type="password" placeholder="Repetir"></div>
           <button id="nuAddBtn" style="flex:0 0 38px;">+</button>
         </div>
         <div class="cfg-hard" id="nuMsg" style="margin-top:6px;"></div>
@@ -610,7 +622,7 @@
   var registros = cargar(LS.registros, []);
 
   var loginUser=$("#loginUser"), loginPass=$("#loginPass"), loginPass2=$("#loginPass2"), loginBtn=$("#loginBtn");
-  var loginHint=$("#loginHint"), loginError=$("#loginError");
+  var loginHint=$("#loginHint"), loginError=$("#loginError"), loginPass2Wrap=$("#loginPass2Wrap");
   var gpsWaitTitle=$("#gpsWaitTitle"), gpsWaitMsg=$("#gpsWaitMsg"), gpsSkipBtn=$("#gpsSkipBtn");
 
   var puntoSel=$("#punto"), muestraNum=$("#muestraNum");
@@ -896,24 +908,60 @@
     return s.slice(0, 12);
   }
 
+  /* Añade un botón de ojo a cada casilla de contraseña. Solo cambia el atributo
+     "type" del campo; el valor escrito no se toca, así que ninguna validación
+     ni ningún envío se ve afectado. */
+  var OJO_ABIERTO = '<svg viewBox="0 0 24 24" fill="none"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="12" r="2.8" stroke="currentColor" stroke-width="1.7"/></svg>';
+  var OJO_CERRADO = '<svg viewBox="0 0 24 24" fill="none"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="12" r="2.8" stroke="currentColor" stroke-width="1.7"/><path d="M4 20L20 4" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>';
+
+  function ponerOjo(input){
+    if(!input || !input.parentNode) return;
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "pass-eye";
+    b.setAttribute("aria-label", "Mostrar u ocultar la contraseña");
+    b.innerHTML = OJO_CERRADO;
+    b.addEventListener("click", function(e){
+      e.preventDefault();
+      var visible = input.type === "text";
+      input.type = visible ? "password" : "text";
+      b.innerHTML = visible ? OJO_CERRADO : OJO_ABIERTO;
+      b.classList.toggle("on", !visible);
+      input.focus();
+    });
+    input.parentNode.appendChild(b);
+  }
+  [loginPass, loginPass2, $("#nuPass"), $("#nuPass2")].forEach(ponerOjo);
+
+  // Al cambiar de pantalla, las contraseñas vuelven a ocultarse: nunca deben
+  // quedar visibles de una sesión para otra.
+  function ocultarContrasenas(){
+    [loginPass, loginPass2, $("#nuPass"), $("#nuPass2")].forEach(function(inp){
+      if(!inp) return;
+      inp.type = "password";
+      var b = inp.parentNode.querySelector(".pass-eye");
+      if(b){ b.innerHTML = OJO_CERRADO; b.classList.remove("on"); }
+    });
+  }
+
   function actualizarModoLogin(){
     var nick = normalizarNick(loginUser.value);
     loginError.textContent = "";
     if(nick === "demo"){
       loginHint.textContent = "Modo demostración: los valores se generan solos, no se guardan.";
-      loginPass2.style.display = "none";
+      loginPass2Wrap.style.display = "none";
       loginBtn.textContent = "Entrar en modo demo";
     } else if(nick && usuarios[nick]){
       loginHint.textContent = "Bienvenida de nuevo, " + nick + ". Escribe tu contraseña.";
-      loginPass2.style.display = "none";
+      loginPass2Wrap.style.display = "none";
       loginBtn.textContent = "Ingresar";
     } else if(nick){
       loginHint.textContent = "Usuario nuevo. Crea una contraseña para registrarte en este celular.";
-      loginPass2.style.display = "block";
+      loginPass2Wrap.style.display = "block";
       loginBtn.textContent = "Registrarme";
     } else {
       loginHint.textContent = "Ingresa tu usuario para comenzar";
-      loginPass2.style.display = "none";
+      loginPass2Wrap.style.display = "none";
       loginBtn.textContent = "Continuar";
     }
   }
@@ -953,7 +1001,7 @@
     if(!demo){ guardar(LS.lastUser, nick); }
     muestraPorPunto = cargar(clavesDe(nick).muestras, {});
     demoAviso.style.display = demo ? "block" : "none";
-    loginPass.value = ""; loginPass2.value = "";
+    loginPass.value = ""; loginPass2.value = ""; ocultarContrasenas();
 
     renderPuntosConfig(); renderPuntoSelect();
     if(isDemo){ fillMetrics(randomPlausible()); } else { clearMetrics(); }
@@ -1164,7 +1212,7 @@
     if(p1 !== p2){ msg.textContent = "Las contraseñas no coinciden."; return; }
     usuarios[nick] = { pass: p1 };
     guardar(LS.usuarios, usuarios);
-    $("#nuNick").value=""; $("#nuPass").value=""; $("#nuPass2").value="";
+    $("#nuNick").value=""; $("#nuPass").value=""; $("#nuPass2").value=""; ocultarContrasenas();
     msg.style.color = "var(--ok)";
     msg.textContent = "Usuario «"+nick+"» creado. Para usarlo: menú → Cerrar sesión e ingresar con ese nombre.";
     renderUsuarios();
@@ -1196,7 +1244,8 @@
     warnMsg.innerHTML =
       "Se reiniciará la numeración del usuario <b>" + currentUser + "</b>.<br>" +
       "Su próximo registro volverá a ser el <b>0001</b> (ahora iría por el " +
-      ("0000"+(n+1)).slice(-4) + ").<br><br>" +
+      ("0000"+(n+1)).slice(-4) + "), y la cuenta de muestras de <b>todos los puntos</b> " +
+      "volverá a empezar en 1.<br><br>" +
       "<b>Antes de continuar</b>, hay que eliminar de la hoja de cálculo los registros " +
       "de este usuario. Si no se hace, los números repetidos serán rechazados por el " +
       "servidor y esas mediciones no llegarán a guardarse.<br><br>" +
@@ -1204,10 +1253,24 @@
     warnActionsConfirm.hidden = false; warnActionsOk.hidden = true;
     warnYes.textContent = "Sí, reiniciar";
     pendingConfirm = function(){
+      // Reiniciar TODO lo que lleva cuenta para este usuario:
+      //  - el correlativo del measurement_id
+      //  - la cuenta de muestras de cada punto
+      //  - sus registros guardados en este equipo (ya fueron borrados de la hoja)
       guardar(clavesDe(currentUser).correlativo, 0);
+      muestraPorPunto = {};
+      guardar(clavesDe(currentUser).muestras, muestraPorPunto);
+      registros = registros.filter(function(r){ return r.operador !== currentUser; });
+      guardar(LS.registros, registros);
+
       refrescarContadorInfo();
+      renderPuntoSelect();   // vuelve a mostrar "Muestra 1"
+      updateLed();
+      drawChart();
+
       warnTitle.textContent = "Numeración reiniciada";
-      warnMsg.innerHTML = "El usuario <b>" + currentUser + "</b> empezará de nuevo en <b>0001</b>.";
+      warnMsg.innerHTML = "El usuario <b>" + currentUser + "</b> empezará de nuevo en <b>0001</b>, " +
+        "y todos los puntos vuelven a la muestra <b>1</b>.";
       warnActionsConfirm.hidden = true; warnActionsOk.hidden = false;
       warnModal.classList.add("show");
     };
@@ -1232,7 +1295,7 @@
   goInstr.addEventListener("click", function(){ showView("viewInstr"); });
   configBack.addEventListener("click", function(){ showView("viewMenu"); });
   instrBack.addEventListener("click", function(){ showView("viewMenu"); });
-  doLogout.addEventListener("click", function(){ loginPass.value=""; loginPass2.value=""; actualizarModoLogin(); showView("viewLogin"); });
+  doLogout.addEventListener("click", function(){ loginPass.value=""; loginPass2.value=""; ocultarContrasenas(); actualizarModoLogin(); showView("viewLogin"); });
 
   function evaluar(){
     var ok=true, fueraDeRango=[], fueraDeLimite=[];
